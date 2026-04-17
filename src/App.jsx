@@ -503,7 +503,7 @@ const SettingsModal = ({ onClose, games, onImport, onExport, onReset }) => {
           </div>
 
           {/* Version */}
-          <p className="text-center text-slate-600 text-xs">BoardVault v. 1.9</p>
+          <p className="text-center text-slate-600 text-xs">BoardVault v. 2.2</p>
         </div>
       </div>
     </div>
@@ -541,6 +541,63 @@ const AddGameModal = ({ onClose, onAdd }) => {
     onClose();
   };
 
+  const [bggResults, setBggResults] = useState([]);
+  const [bggLoading, setBggLoading] = useState(false);
+  const [bggError, setBggError] = useState("");
+
+  const searchBGG = async () => {
+    if (!query.trim()) return;
+    setBggLoading(true);
+    setBggError("");
+    setBggResults([]);
+    try {
+      const searchRes = await fetch(`https://boardgamegeek.com/xmlapi2/search?query=${encodeURIComponent(query)}&type=boardgame&exact=0`);
+      const searchText = await searchRes.text();
+      const parser = new DOMParser();
+      const searchXml = parser.parseFromString(searchText, "text/xml");
+      const items = Array.from(searchXml.querySelectorAll("item")).slice(0, 5);
+      const ids = items.map(i => i.getAttribute("id")).filter(Boolean).join(",");
+      if (!ids) { setBggError("Keine Ergebnisse gefunden."); setBggLoading(false); return; }
+      const detailRes = await fetch(`https://boardgamegeek.com/xmlapi2/thing?id=${ids}&stats=1`);
+      const detailText = await detailRes.text();
+      const detailXml = parser.parseFromString(detailText, "text/xml");
+      const games = Array.from(detailXml.querySelectorAll("item")).map(item => {
+        const getName = (tag) => item.querySelector(tag)?.getAttribute("value") || "";
+        const title = Array.from(item.querySelectorAll("name")).find(n => n.getAttribute("type") === "primary")?.getAttribute("value") || "";
+        const year = item.querySelector("yearpublished")?.getAttribute("value") || "";
+        const image = item.querySelector("image")?.textContent?.trim() || "";
+        const thumbnail = item.querySelector("thumbnail")?.textContent?.trim() || "";
+        const minPlayers = getName("minplayers");
+        const maxPlayers = getName("maxplayers");
+        const minTime = getName("minplaytime");
+        const maxTime = getName("maxplaytime");
+        const publisher = Array.from(item.querySelectorAll("link[type='boardgamepublisher']"))[0]?.getAttribute("value") || "";
+        const categories = Array.from(item.querySelectorAll("link[type='boardgamecategory']")).map(l => l.getAttribute("value"));
+        const complexity = parseFloat(item.querySelector("averageweight")?.getAttribute("value") || "0");
+        const rating = parseFloat(item.querySelector("average")?.getAttribute("value") || "0");
+        const rawImage = image.startsWith("http") ? image : image ? `https:${image}` : thumbnail.startsWith("http") ? thumbnail : thumbnail ? `https:${thumbnail}` : "";
+        const imageUrl = rawImage ? `https://images.weserv.nl/?url=${encodeURIComponent(rawImage)}&w=400&h=400&fit=cover&output=jpg` : "";
+        return { title, year, image: imageUrl, minPlayers, maxPlayers, minTime, maxTime, publisher, categories, complexity, rating };
+      }).filter(g => g.title);
+      setBggResults(games);
+    } catch (e) {
+      setBggError("BGG API nicht erreichbar. Bitte manuell ausfüllen.");
+    }
+    setBggLoading(false);
+  };
+
+  const fillFromBGG = (g) => {
+    const players = g.minPlayers === g.maxPlayers ? g.minPlayers : `${g.minPlayers}–${g.maxPlayers}`;
+    const duration = g.minTime === g.maxTime ? `${g.minTime} min` : `${g.minTime}–${g.maxTime} min`;
+    const complexityLevel = g.complexity <= 1.5 ? 1 : g.complexity <= 2.5 ? 2 : g.complexity <= 3.5 ? 3 : g.complexity <= 4.5 ? 4 : 5;
+    const cat = g.categories[0] || "Sonstiges";
+    const mappedCat = cat.includes("Strateg") ? "Strategie" : cat.includes("Family") || cat.includes("Familie") ? "Familie" : cat.includes("Party") ? "Party" : cat.includes("Card") || cat.includes("Karten") ? "Kartenspiel" : cat.includes("Dice") || cat.includes("W\u00fcrfel") ? "W\u00fcrfelspiel" : "Sonstiges";
+    setForm(f => ({ ...f, title: g.title, year: g.year, image: g.image, players, duration, publisher: g.publisher, category: mappedCat }));
+    setComplexity(complexityLevel);
+    setBggResults([]);
+    setQuery(g.title);
+  };
+
   const googleSearch = () => {
     window.open(`https://www.google.com/search?q=${encodeURIComponent(query + " Brettspiel")}`, "_blank");
   };
@@ -566,17 +623,43 @@ const AddGameModal = ({ onClose, onAdd }) => {
               <input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && fillFromQuery()}
+                onKeyDown={(e) => e.key === "Enter" && searchBGG()}
                 placeholder="Spielname eingeben..."
                 className="flex-1 bg-slate-700 text-white rounded-xl px-4 py-2.5 text-sm outline-none border border-slate-600 focus:border-violet-500 transition-colors"
               />
               <button
-                onClick={fillFromQuery}
-                className="bg-violet-600 hover:bg-violet-500 text-white px-3 py-2 rounded-xl text-sm font-medium transition-colors"
+                onClick={searchBGG}
+                disabled={bggLoading}
+                className="bg-violet-600 hover:bg-violet-500 disabled:opacity-50 text-white px-3 py-2 rounded-xl text-sm font-medium transition-colors flex items-center gap-1"
               >
-                ↵
+                {bggLoading ? <span className="animate-spin">⟳</span> : "🔍 BGG"}
               </button>
             </div>
+            {bggError && <p className="text-red-400 text-xs mt-1">{bggError}</p>}
+            {bggResults.length > 0 && (
+              <div className="mt-2 space-y-1 bg-slate-900 rounded-xl border border-slate-600 overflow-hidden">
+                <p className="text-slate-400 text-xs px-3 pt-2 pb-1 border-b border-slate-700">BGG Ergebnisse – auswählen zum Befüllen:</p>
+                {bggResults.map((g, i) => (
+                  <button
+                    key={i}
+                    onClick={() => fillFromBGG(g)}
+                    className="w-full flex items-center gap-3 px-3 py-2 hover:bg-slate-700 transition-colors text-left"
+                  >
+                    {g.image ? (
+                      <img src={g.image} alt={g.title} className="w-10 h-10 object-cover rounded-lg flex-shrink-0"
+                        onError={(e) => { e.target.style.display='none'; }} />
+                    ) : (
+                      <div className="w-10 h-10 bg-slate-700 rounded-lg flex-shrink-0 flex items-center justify-center text-slate-500 text-xs">?</div>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-white text-sm font-medium truncate">{g.title}</p>
+                      <p className="text-slate-400 text-xs">{g.year} · {g.publisher || "Unbekannt"} · 👥 {g.minPlayers}–{g.maxPlayers}</p>
+                    </div>
+                    <span className="text-violet-400 text-xs flex-shrink-0">↵ übernehmen</span>
+                  </button>
+                ))}
+              </div>
+            )}
             <div className="flex gap-2 mt-2">
               <button onClick={googleSearch} className="flex-1 bg-slate-700/60 hover:bg-blue-700/40 text-slate-300 hover:text-white text-xs py-1.5 rounded-lg transition-colors border border-slate-600">
                 🔍 Google
@@ -588,7 +671,7 @@ const AddGameModal = ({ onClose, onAdd }) => {
                 🎯 BGG
               </button>
             </div>
-            <p className="text-slate-500 text-xs mt-1">💡 Tipp: Suche auf BGG nach Cover-Bild-URL für das beste Ergebnis.</p>
+            <p className="text-slate-500 text-xs mt-1">💡 Tipp: BGG-Suche befüllt Titel, Jahr, Bild, Spieler & Dauer automatisch!</p>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
@@ -927,12 +1010,30 @@ export default function BoardVault() {
                 <h1 className="text-lg font-black tracking-tight bg-gradient-to-r from-violet-400 to-indigo-300 bg-clip-text text-transparent leading-none">
                   BoardVault
                 </h1>
-                <p className="text-slate-500 text-xs">v. 1.9 · {games.length} Spiele · {totalValue.toFixed(0)} € Wert</p>
+                <p className="text-slate-500 text-xs">v. 2.2 · {games.length} Spiele · {totalValue.toFixed(0)} € Wert</p>
               </div>
             </div>
 
             <div className="flex items-center gap-2">
               {/* View Toggle */}
+              <div className="flex bg-slate-800 rounded-xl p-1 gap-1">
+                {[
+                  { id: "list", icon: "≡", label: "Liste" },
+                  { id: "grid-small", icon: "⊞", label: "Klein" },
+                  { id: "grid-large", icon: "▣", label: "Groß" },
+                ].map(({ id, icon, label }) => (
+                  <button
+                    key={id}
+                    onClick={() => setView(id)}
+                    title={label}
+                    className={`px-3 py-1.5 rounded-lg text-sm transition-all ${
+                      view === id ? "bg-violet-600 text-white" : "text-slate-400 hover:text-white"
+                    }`}
+                  >
+                    {icon}
+                  </button>
+                ))}
+              </div>
 
 
               <button
