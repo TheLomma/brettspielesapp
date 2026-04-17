@@ -9,7 +9,7 @@ const SAMPLE_GAMES = [
     players: "3\u20134",
     duration: "60\u2013120 min",
     category: "Strategie",
-    image: "https://upload.wikimedia.org/wikipedia/en/a/a3/Catan-2015-boxart.jpg",
+    image: "https://cf.geekdo-images.com/W3Bsga_uLP9kO91gZ7H8yw__imagepagezoom/img/iEBcAHaFuHQAGiHFJHRYFhEBGus=/fit-in/1024x1024/filters:no_upscale():strip_icc()/pic2419375.jpg",
     price: 39.99,
     amazonPrice: 34.99,
     rating: 4,
@@ -41,7 +41,7 @@ const SAMPLE_GAMES = [
     players: "2\u20134",
     duration: "45\u201360 min",
     category: "Kooperativ",
-    image: "https://upload.wikimedia.org/wikipedia/en/0/0e/Pandemic_board_game_box.jpg",
+    image: "https://cf.geekdo-images.com/S3ybV1LAp-8SnHIXLLjVqA__imagepagezoom/img/vPCRHAbBhqhTJqMJH9ZFmFQpDHY=/fit-in/1024x1024/filters:no_upscale():strip_icc()/pic1534148.jpg",
     price: 34.99,
     amazonPrice: 29.99,
     rating: 4,
@@ -644,7 +644,9 @@ export default function BoardVault() {
         <div className="max-w-6xl mx-auto px-4 py-3">
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-3">
-              <img src="/icon-192x192.png" alt="BoardVault Logo" className="w-10 h-10 rounded-xl shadow-lg shadow-violet-900/40" />
+              <div className="w-10 h-10 rounded-xl shadow-lg shadow-violet-900/40 bg-gradient-to-br from-indigo-900 to-slate-900 border border-violet-700/50 flex items-center justify-center text-xl flex-shrink-0">
+                🎲
+              </div>
               <div>
                 <h1 className="text-lg font-black tracking-tight bg-gradient-to-r from-violet-400 to-indigo-300 bg-clip-text text-transparent leading-none">
                   BoardVault
