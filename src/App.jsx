@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 
 const SAMPLE_GAMES = [
-  { id: 1, title: "Catan", wishlist: false,
+  { id: 1, title: "Catan", wishlist: false, tags: ["Klassiker", "Tausch"],
     publisher: "Kosmos",
     year: 1995,
     players: "3\u20134",
@@ -15,7 +15,7 @@ const SAMPLE_GAMES = [
     quantity: 1,
     addedAt: new Date().toISOString(),
   },
-  { id: 2, title: "Ticket to Ride", wishlist: false,
+  { id: 2, title: "Ticket to Ride", wishlist: false, tags: ["Familie", "Einsteiger"],
     publisher: "Days of Wonder",
     year: 2004,
     players: "2\u20135",
@@ -29,7 +29,7 @@ const SAMPLE_GAMES = [
     quantity: 1,
     addedAt: new Date().toISOString(),
   },
-  { id: 3, title: "Pandemic", wishlist: false,
+  { id: 3, title: "Pandemic", wishlist: false, tags: ["Kooperativ", "Anspruchsvoll"],
     publisher: "Z-Man Games",
     year: 2008,
     players: "2\u20134",
@@ -49,6 +49,8 @@ const WISHLIST_FILTER = ["Alle", "Sammlung", "Wunschliste"];
 const LENT_FILTER = ["Alle", "Verfügbar", "Verliehen"];
 const PLAYER_FILTER = ["Alle", "1", "2", "3", "4", "5+"];
 const DURATION_FILTER = ["Alle", "< 30 min", "30–60 min", "60–120 min", "> 120 min"];
+const SUGGESTED_TAGS = ["Klassiker", "Einsteiger", "Experte", "Schnell", "Komplex", "Familienabend", "Party", "2-Personen", "Solo", "Kooperativ", "Tausch", "Verkauf", "Anspruchsvoll", "Beliebt"];
+
 const CATEGORIES = ["Alle", "Strategie", "Familie", "Kooperativ", "Party", "Kartenspiel", "Würfelspiel", "Sonstiges"];
 const SORT_OPTIONS = [
   { value: "title", label: "Name A–Z" },
@@ -155,6 +157,8 @@ const GameCard = ({ game, onSelect, view }) => {
 const Modal = ({ game, onClose, onUpdate, onDelete }) => {
   const [editNotes, setEditNotes] = useState(game.notes || "");
   const [editWishlist, setEditWishlist] = useState(game.wishlist || false);
+  const [editTags, setEditTags] = useState(game.tags || []);
+  const [tagInput, setTagInput] = useState("");
   const [editLentTo, setEditLentTo] = useState(game.lentTo || "");
   const [editLentDate, setEditLentDate] = useState(game.lentDate || new Date().toISOString().split("T")[0]);
   const [editRating, setEditRating] = useState(game.rating || 0);
@@ -163,7 +167,7 @@ const Modal = ({ game, onClose, onUpdate, onDelete }) => {
   const [saved, setSaved] = useState(false);
 
   const handleSave = () => {
-    onUpdate({ ...game, notes: editNotes, rating: editRating, quantity: editQuantity, price: parseFloat(editPrice) || 0, wishlist: editWishlist, lentTo: editLentTo, lentDate: editLentTo ? editLentDate : "" });
+    onUpdate({ ...game, notes: editNotes, rating: editRating, quantity: editQuantity, price: parseFloat(editPrice) || 0, wishlist: editWishlist, lentTo: editLentTo, lentDate: editLentTo ? editLentDate : "", tags: editTags });
     setSaved(true);
     setTimeout(() => setSaved(false), 1500);
   };
@@ -287,6 +291,48 @@ const Modal = ({ game, onClose, onUpdate, onDelete }) => {
                 ✅ Zurückgekommen
               </button>
             )}
+          </div>
+
+          <div className="bg-slate-700/40 rounded-xl p-3 border border-slate-600/50 space-y-2">
+            <p className="text-slate-400 text-xs font-semibold">🏷️ Tags</p>
+            <div className="flex flex-wrap gap-1.5">
+              {editTags.map((tag) => (
+                <span key={tag} className="flex items-center gap-1 bg-violet-600/20 text-violet-300 border border-violet-600/30 px-2 py-0.5 rounded-full text-xs">
+                  {tag}
+                  <button onClick={() => setEditTags(editTags.filter(t => t !== tag))} className="hover:text-white ml-0.5">×</button>
+                </span>
+              ))}
+            </div>
+            <div className="flex gap-2">
+              <input
+                value={tagInput}
+                onChange={(e) => setTagInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if ((e.key === "Enter" || e.key === ",") && tagInput.trim()) {
+                    e.preventDefault();
+                    const t = tagInput.trim().replace(/,$/, "");
+                    if (!editTags.includes(t)) setEditTags([...editTags, t]);
+                    setTagInput("");
+                  }
+                }}
+                placeholder="Tag eingeben + Enter"
+                className="flex-1 bg-slate-700 text-white rounded-xl px-3 py-1.5 text-xs outline-none border border-slate-600 focus:border-violet-500 transition-colors"
+              />
+              <button
+                onClick={() => {
+                  if (tagInput.trim() && !editTags.includes(tagInput.trim())) {
+                    setEditTags([...editTags, tagInput.trim()]);
+                    setTagInput("");
+                  }
+                }}
+                className="bg-violet-600 hover:bg-violet-500 text-white px-3 py-1.5 rounded-xl text-xs transition-colors"
+              >+</button>
+            </div>
+            <div className="flex flex-wrap gap-1">
+              {SUGGESTED_TAGS.filter(t => !editTags.includes(t)).slice(0, 6).map(t => (
+                <button key={t} onClick={() => setEditTags([...editTags, t])} className="text-xs bg-slate-700 hover:bg-violet-600/30 text-slate-400 hover:text-violet-300 border border-slate-600 hover:border-violet-600/50 px-2 py-0.5 rounded-full transition-all">{t}</button>
+              ))}
+            </div>
           </div>
 
           <div className="flex items-center gap-2 bg-slate-700/40 rounded-xl px-4 py-2.5 border border-slate-600/50">
@@ -415,7 +461,7 @@ const SettingsModal = ({ onClose, games, onImport, onExport, onReset }) => {
           </div>
 
           {/* Version */}
-          <p className="text-center text-slate-600 text-xs">BoardVault v. 1.6</p>
+          <p className="text-center text-slate-600 text-xs">BoardVault v. 1.7</p>
         </div>
       </div>
     </div>
@@ -426,9 +472,10 @@ const AddGameModal = ({ onClose, onAdd }) => {
   const [query, setQuery] = useState("");
   const [form, setForm] = useState({
     title: "", publisher: "", year: new Date().getFullYear(), players: "", duration: "",
-    category: "Strategie", image: "", price: "", amazonPrice: "", notes: "", quantity: 1, rating: 0, wishlist: false,
+    category: "Strategie", image: "", price: "", amazonPrice: "", notes: "", quantity: 1, rating: 0, wishlist: false, tags: [],
   });
   const [rating, setRating] = useState(0);
+  const [tagInput, setTagInput] = useState("");
 
   const fillFromQuery = () => {
     if (!query.trim()) return;
@@ -551,6 +598,48 @@ const AddGameModal = ({ onClose, onAdd }) => {
             <StarRating rating={rating} onRate={setRating} size="lg" />
           </div>
 
+          <div className="bg-slate-700/50 rounded-xl p-3 border border-slate-600 space-y-2">
+            <p className="text-slate-400 text-xs font-semibold">🏷️ Tags</p>
+            <div className="flex flex-wrap gap-1.5">
+              {(form.tags || []).map((tag) => (
+                <span key={tag} className="flex items-center gap-1 bg-violet-600/20 text-violet-300 border border-violet-600/30 px-2 py-0.5 rounded-full text-xs">
+                  {tag}
+                  <button onClick={() => setForm(f => ({ ...f, tags: f.tags.filter(t => t !== tag) }))} className="hover:text-white">×</button>
+                </span>
+              ))}
+            </div>
+            <div className="flex gap-2">
+              <input
+                value={tagInput}
+                onChange={(e) => setTagInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if ((e.key === "Enter" || e.key === ",") && tagInput.trim()) {
+                    e.preventDefault();
+                    const t = tagInput.trim().replace(/,$/, "");
+                    if (!(form.tags || []).includes(t)) setForm(f => ({ ...f, tags: [...(f.tags || []), t] }));
+                    setTagInput("");
+                  }
+                }}
+                placeholder="Tag eingeben + Enter"
+                className="flex-1 bg-slate-700 text-white rounded-xl px-3 py-1.5 text-xs outline-none border border-slate-600 focus:border-violet-500"
+              />
+              <button
+                onClick={() => {
+                  if (tagInput.trim() && !(form.tags||[]).includes(tagInput.trim())) {
+                    setForm(f => ({ ...f, tags: [...(f.tags||[]), tagInput.trim()] }));
+                    setTagInput("");
+                  }
+                }}
+                className="bg-violet-600 hover:bg-violet-500 text-white px-3 py-1.5 rounded-xl text-xs"
+              >+</button>
+            </div>
+            <div className="flex flex-wrap gap-1">
+              {SUGGESTED_TAGS.filter(t => !(form.tags||[]).includes(t)).slice(0, 6).map(t => (
+                <button key={t} onClick={() => setForm(f => ({ ...f, tags: [...(f.tags||[]), t] }))} className="text-xs bg-slate-700 hover:bg-violet-600/30 text-slate-400 hover:text-violet-300 border border-slate-600 px-2 py-0.5 rounded-full transition-all">{t}</button>
+              ))}
+            </div>
+          </div>
+
           <div className="flex items-center gap-2 bg-slate-700/50 rounded-xl px-4 py-2.5 border border-slate-600">
             <span className="text-slate-400 text-xs flex-1">🛒 Auf Wunschliste setzen</span>
             <button
@@ -609,6 +698,7 @@ export default function BoardVault() {
   const [filterWishlist, setFilterWishlist] = useState("Alle");
   const [filterLent, setFilterLent] = useState("Alle");
   const [filterPlayers, setFilterPlayers] = useState("Alle");
+  const [filterTag, setFilterTag] = useState("");
   const [filterDuration, setFilterDuration] = useState("Alle");
   const [sortBy, setSortBy] = useState("addedAt");
   const [selectedGame, setSelectedGame] = useState(null);
@@ -624,6 +714,8 @@ export default function BoardVault() {
     setToast(msg);
     setTimeout(() => setToast(null), 2500);
   };
+
+  const allTags = [...new Set(games.flatMap(g => g.tags || []))];
 
   const updateLent = (id, lentTo, lentDate) => {
     setGames((prev) => prev.map((g) => g.id === id ? { ...g, lentTo: lentTo || "", lentDate: lentTo ? lentDate : "" } : g));
@@ -701,6 +793,7 @@ export default function BoardVault() {
           if (filterPlayers === "5+") return max >= 5;
           return min <= n && max >= n;
         })()) &&
+        (!filterTag || (g.tags || []).map(t => t.toLowerCase()).includes(filterTag.toLowerCase())) &&
         (filterDuration === "Alle" || (() => {
           const d = g.duration || "";
           const nums = d.match(/\d+/g)?.map(Number) || [];
@@ -762,7 +855,7 @@ export default function BoardVault() {
                 <h1 className="text-lg font-black tracking-tight bg-gradient-to-r from-violet-400 to-indigo-300 bg-clip-text text-transparent leading-none">
                   BoardVault
                 </h1>
-                <p className="text-slate-500 text-xs">v. 1.6 · {games.length} Spiele · {totalValue.toFixed(0)} € Wert</p>
+                <p className="text-slate-500 text-xs">v. 1.7 · {games.length} Spiele · {totalValue.toFixed(0)} € Wert</p>
               </div>
             </div>
 
@@ -815,6 +908,16 @@ export default function BoardVault() {
             >
               {LENT_FILTER.map((l) => <option key={l} value={l}>{l}</option>)}
             </select>
+            {allTags.length > 0 && (
+              <select
+                value={filterTag}
+                onChange={(e) => setFilterTag(e.target.value)}
+                className="bg-slate-800 text-white rounded-xl px-3 py-2 text-sm outline-none border border-slate-700 focus:border-violet-500 transition-colors"
+              >
+                <option value="">🏷️ Tags</option>
+                {allTags.map((t) => <option key={t} value={t}>{t}</option>)}
+              </select>
+            )}
             <select
               value={filterPlayers}
               onChange={(e) => setFilterPlayers(e.target.value)}
@@ -902,6 +1005,13 @@ export default function BoardVault() {
                     {game.lentTo && <span className="text-xs bg-blue-500/20 text-blue-400 border border-blue-500/30 px-1.5 py-0.5 rounded-full flex-shrink-0">📤 {game.lentTo}</span>}
                   </div>
                   <p className="text-slate-400 text-xs">{game.publisher} · {game.year} · {game.category}</p>
+                  {(game.tags || []).length > 0 && (
+                    <div className="flex flex-wrap gap-1 mt-1">
+                      {game.tags.map(tag => (
+                        <span key={tag} className="text-xs bg-violet-600/20 text-violet-400 border border-violet-600/30 px-1.5 py-0 rounded-full">{tag}</span>
+                      ))}
+                    </div>
+                  )}
                 </div>
                 <div className="hidden sm:flex items-center gap-4 text-xs text-slate-400">
                   <span>👥 {game.players}</span>
