@@ -9,7 +9,7 @@ const SAMPLE_GAMES = [
     players: "3–4",
     duration: "60–120 min",
     category: "Strategie",
-    image: "https://cf.geekdo-images.com/W3Bsga_uLP9kO91gZ7H8yw__imagepage/img/M_3Pm_gHGX9o90BAQF-_Pd9BCQE=/fit-in/900x600/filters:no_upscale():strip_icc()/pic2419375.jpg",
+    image: "https://images-na.ssl-images-amazon.com/images/I/81oJoIBPFbL.jpg",
     price: 39.99,
     amazonPrice: 34.99,
     rating: 4,
@@ -25,7 +25,7 @@ const SAMPLE_GAMES = [
     players: "2–5",
     duration: "30–60 min",
     category: "Familie",
-    image: "https://cf.geekdo-images.com/ZWJg0dCdrWHxVnc0eFXK8w__imagepage/img/dhCVFrDnp7hs8XNHI0iqQVanDOk=/fit-in/900x600/filters:no_upscale():strip_icc()/pic38668.jpg",
+    image: "https://images-na.ssl-images-amazon.com/images/I/91YNJM4oyhL.jpg",
     price: 44.99,
     amazonPrice: 41.99,
     rating: 5,
@@ -41,7 +41,7 @@ const SAMPLE_GAMES = [
     players: "2–4",
     duration: "45–60 min",
     category: "Kooperativ",
-    image: "https://cf.geekdo-images.com/S3ybV1LAp-8SnHIXLLjVqA__imagepage/img/49fX8oDgZlSMJfpR8p4XDPC8yG0=/fit-in/900x600/filters:no_upscale():strip_icc()/pic1534148.jpg",
+    image: "https://images-na.ssl-images-amazon.com/images/I/81gOtTfHMGL.jpg",
     price: 34.99,
     amazonPrice: 29.99,
     rating: 4,
@@ -95,9 +95,7 @@ const GameCard = ({ game, onSelect, view }) => {
             alt={game.title}
             className="w-full h-full object-cover rounded-t shadow-lg group-hover:shadow-2xl transition-all duration-300 group-hover:-translate-y-2"
             style={{ borderRadius: "4px 4px 0 0" }}
-            onError={(e) => {
-              e.target.src = `https://via.placeholder.com/90x130/1e1b4b/a78bfa?text=${encodeURIComponent(game.title.charAt(0))}`;
-            }}
+            onError={(e) => { e.target.onerror = null; e.target.src = `https://placehold.co/90x130/1e1b4b/a78bfa/png?text=${encodeURIComponent(game.title.charAt(0))}`; }}
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent rounded-t opacity-0 group-hover:opacity-100 transition-opacity" />
           {game.rating > 0 && (
@@ -126,9 +124,7 @@ const GameCard = ({ game, onSelect, view }) => {
           src={game.image}
           alt={game.title}
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-          onError={(e) => {
-            e.target.src = `https://via.placeholder.com/300x160/1e1b4b/a78bfa?text=${encodeURIComponent(game.title)}`;
-          }}
+          onError={(e) => { e.target.onerror = null; e.target.src = `https://placehold.co/300x160/1e1b4b/a78bfa/png?text=${encodeURIComponent(game.title)}`; }}
         />
         <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-transparent to-transparent" />
         <div className="absolute top-2 right-2">
@@ -179,9 +175,7 @@ const Modal = ({ game, onClose, onUpdate, onDelete }) => {
             src={game.image}
             alt={game.title}
             className="w-full h-full object-cover"
-            onError={(e) => {
-              e.target.src = `https://via.placeholder.com/500x200/1e1b4b/a78bfa?text=${encodeURIComponent(game.title)}`;
-            }}
+            onError={(e) => { e.target.onerror = null; e.target.src = `https://placehold.co/500x200/1e1b4b/a78bfa/png?text=${encodeURIComponent(game.title)}`; }}
           />
           <div className="absolute inset-0 bg-gradient-to-t from-slate-900 to-transparent" />
           <button
@@ -672,9 +666,7 @@ export default function BoardVault() {
                   src={game.image}
                   alt={game.title}
                   className="w-14 h-14 object-cover rounded-xl flex-shrink-0"
-                  onError={(e) => {
-                    e.target.src = `https://via.placeholder.com/56x56/1e1b4b/a78bfa?text=${encodeURIComponent(game.title.charAt(0))}`;
-                  }}
+                  onError={(e) => { e.target.onerror = null; e.target.src = `https://placehold.co/56x56/1e1b4b/a78bfa/png?text=${encodeURIComponent(game.title.charAt(0))}`; }}
                 />
                 <div className="flex-1 min-w-0">
                   <h3 className="text-white font-semibold text-sm truncate">{game.title}</h3>
