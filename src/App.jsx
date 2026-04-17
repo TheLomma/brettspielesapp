@@ -9,7 +9,7 @@ const SAMPLE_GAMES = [
     players: "3\u20134",
     duration: "60\u2013120 min",
     category: "Strategie",
-    image: "https://cf.geekdo-images.com/W3Bsga_uLP9kO91gZ7H8yw__imagepagezoom/img/iEBcAHaFuHQAGiHFJHRYFhEBGus=/fit-in/1024x1024/filters:no_upscale():strip_icc()/pic2419375.jpg",
+    image: "https://images.unsplash.com/photo-1611371736707-a5a2c2d9c7a4?w=400&q=80",
     price: 39.99,
     amazonPrice: 34.99,
     rating: 4,
@@ -41,7 +41,7 @@ const SAMPLE_GAMES = [
     players: "2\u20134",
     duration: "45\u201360 min",
     category: "Kooperativ",
-    image: "https://cf.geekdo-images.com/S3ybV1LAp-8SnHIXLLjVqA__imagepagezoom/img/vPCRHAbBhqhTJqMJH9ZFmFQpDHY=/fit-in/1024x1024/filters:no_upscale():strip_icc()/pic1534148.jpg",
+    image: "https://images.unsplash.com/photo-1585504198199-20277593b94f?w=400&q=80",
     price: 34.99,
     amazonPrice: 29.99,
     rating: 4,
@@ -644,8 +644,31 @@ export default function BoardVault() {
         <div className="max-w-6xl mx-auto px-4 py-3">
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl shadow-lg shadow-violet-900/40 bg-gradient-to-br from-indigo-900 to-slate-900 border border-violet-700/50 flex items-center justify-center text-xl flex-shrink-0">
-                🎲
+              <div className="w-10 h-10 rounded-xl shadow-lg shadow-violet-900/40 flex-shrink-0 overflow-hidden border border-violet-700/50">
+                <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
+                  <defs>
+                    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stopColor="#0f172a"/>
+                      <stop offset="100%" stopColor="#1e1b4b"/>
+                    </linearGradient>
+                    <linearGradient id="vault" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stopColor="#7c3aed"/>
+                      <stop offset="100%" stopColor="#6366f1"/>
+                    </linearGradient>
+                  </defs>
+                  <rect width="100" height="100" fill="url(#bg)"/>
+                  <rect x="18" y="18" width="64" height="64" rx="10" fill="none" stroke="url(#vault)" strokeWidth="5"/>
+                  <circle cx="50" cy="50" r="18" fill="none" stroke="#a78bfa" strokeWidth="4"/>
+                  <circle cx="50" cy="50" r="7" fill="#f59e0b"/>
+                  <line x1="50" y1="32" x2="50" y2="22" stroke="#a78bfa" strokeWidth="3" strokeLinecap="round"/>
+                  <line x1="50" y1="68" x2="50" y2="78" stroke="#a78bfa" strokeWidth="3" strokeLinecap="round"/>
+                  <line x1="32" y1="50" x2="22" y2="50" stroke="#a78bfa" strokeWidth="3" strokeLinecap="round"/>
+                  <line x1="68" y1="50" x2="78" y2="50" stroke="#a78bfa" strokeWidth="3" strokeLinecap="round"/>
+                  <circle cx="28" cy="28" r="4" fill="#7c3aed"/>
+                  <circle cx="72" cy="28" r="4" fill="#7c3aed"/>
+                  <circle cx="28" cy="72" r="4" fill="#7c3aed"/>
+                  <circle cx="72" cy="72" r="4" fill="#7c3aed"/>
+                </svg>
               </div>
               <div>
                 <h1 className="text-lg font-black tracking-tight bg-gradient-to-r from-violet-400 to-indigo-300 bg-clip-text text-transparent leading-none">
