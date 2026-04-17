@@ -373,7 +373,7 @@ const SettingsModal = ({ onClose, games, onImport, onExport, onReset }) => {
           </div>
 
           {/* Version */}
-          <p className="text-center text-slate-600 text-xs">BoardVault v. 1.2</p>
+          <p className="text-center text-slate-600 text-xs">BoardVault v. 1.3</p>
         </div>
       </div>
     </div>
@@ -550,7 +550,7 @@ export default function BoardVault() {
       return SAMPLE_GAMES;
     }
   });
-  const [view, setView] = useState("grid");
+  const [view, setView] = useState("list");
   const [search, setSearch] = useState("");
   const [filterCategory, setFilterCategory] = useState("Alle");
   const [sortBy, setSortBy] = useState("addedAt");
@@ -674,29 +674,13 @@ export default function BoardVault() {
                 <h1 className="text-lg font-black tracking-tight bg-gradient-to-r from-violet-400 to-indigo-300 bg-clip-text text-transparent leading-none">
                   BoardVault
                 </h1>
-                <p className="text-slate-500 text-xs">v. 1.2 · {games.length} Spiele · {totalValue.toFixed(0)} € Wert</p>
+                <p className="text-slate-500 text-xs">v. 1.3 · {games.length} Spiele · {totalValue.toFixed(0)} € Wert</p>
               </div>
             </div>
 
             <div className="flex items-center gap-2">
               {/* View Toggle */}
-              <div className="hidden sm:flex bg-slate-800 rounded-xl p-1 gap-1">
-                {[
-                  { id: "grid", icon: "▦" },
-                  { id: "shelf", icon: "📚" },
-                  { id: "list", icon: "≡" },
-                ].map(({ id, icon }) => (
-                  <button
-                    key={id}
-                    onClick={() => setView(id)}
-                    className={`px-3 py-1.5 rounded-lg text-sm transition-all ${
-                      view === id ? "bg-violet-600 text-white" : "text-slate-400 hover:text-white"
-                    }`}
-                  >
-                    {icon}
-                  </button>
-                ))}
-              </div>
+
 
               <button
                 onClick={() => setShowSettings(true)}
