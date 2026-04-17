@@ -1,9 +1,7 @@
 import { useState, useEffect } from "react";
 
 const SAMPLE_GAMES = [
-  {
-    id: 1,
-    title: "Catan",
+  { id: 1, title: "Catan", wishlist: false,
     publisher: "Kosmos",
     year: 1995,
     players: "3\u20134",
@@ -17,9 +15,7 @@ const SAMPLE_GAMES = [
     quantity: 1,
     addedAt: new Date().toISOString(),
   },
-  {
-    id: 2,
-    title: "Ticket to Ride",
+  { id: 2, title: "Ticket to Ride", wishlist: false,
     publisher: "Days of Wonder",
     year: 2004,
     players: "2\u20135",
@@ -33,9 +29,7 @@ const SAMPLE_GAMES = [
     quantity: 1,
     addedAt: new Date().toISOString(),
   },
-  {
-    id: 3,
-    title: "Pandemic",
+  { id: 3, title: "Pandemic", wishlist: false,
     publisher: "Z-Man Games",
     year: 2008,
     players: "2\u20134",
@@ -51,6 +45,7 @@ const SAMPLE_GAMES = [
   },
 ];
 
+const WISHLIST_FILTER = ["Alle", "Sammlung", "Wunschliste"];
 const CATEGORIES = ["Alle", "Strategie", "Familie", "Kooperativ", "Party", "Kartenspiel", "Würfelspiel", "Sonstiges"];
 const SORT_OPTIONS = [
   { value: "title", label: "Name A–Z" },
@@ -156,13 +151,14 @@ const GameCard = ({ game, onSelect, view }) => {
 
 const Modal = ({ game, onClose, onUpdate, onDelete }) => {
   const [editNotes, setEditNotes] = useState(game.notes || "");
+  const [editWishlist, setEditWishlist] = useState(game.wishlist || false);
   const [editRating, setEditRating] = useState(game.rating || 0);
   const [editQuantity, setEditQuantity] = useState(game.quantity || 1);
   const [editPrice, setEditPrice] = useState(game.price || "");
   const [saved, setSaved] = useState(false);
 
   const handleSave = () => {
-    onUpdate({ ...game, notes: editNotes, rating: editRating, quantity: editQuantity, price: parseFloat(editPrice) || 0 });
+    onUpdate({ ...game, notes: editNotes, rating: editRating, quantity: editQuantity, price: parseFloat(editPrice) || 0, wishlist: editWishlist });
     setSaved(true);
     setTimeout(() => setSaved(false), 1500);
   };
@@ -258,6 +254,16 @@ const Modal = ({ game, onClose, onUpdate, onDelete }) => {
             />
           </div>
 
+          <div className="flex items-center gap-2 bg-slate-700/40 rounded-xl px-4 py-2.5 border border-slate-600/50">
+            <span className="text-slate-400 text-xs flex-1">Auf Wunschliste</span>
+            <button
+              onClick={() => setEditWishlist(!editWishlist)}
+              className={`relative w-10 h-5 rounded-full transition-colors ${editWishlist ? "bg-amber-500" : "bg-slate-600"}`}
+            >
+              <span className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${editWishlist ? "translate-x-5" : "translate-x-0.5"}`} />
+            </button>
+          </div>
+
           <div className="flex gap-3 pt-2">
             <button
               onClick={handleSave}
@@ -293,7 +299,8 @@ const SettingsModal = ({ onClose, games, onImport, onExport, onReset }) => {
     }
   };
 
-  const totalValue = games.reduce((s, g) => s + (g.price || 0) * (g.quantity || 1), 0);
+  const totalValue = games.filter(g => !g.wishlist).reduce((s, g) => s + (g.price || 0) * (g.quantity || 1), 0);
+  const wishlistCount = games.filter(g => g.wishlist).length;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
@@ -373,7 +380,7 @@ const SettingsModal = ({ onClose, games, onImport, onExport, onReset }) => {
           </div>
 
           {/* Version */}
-          <p className="text-center text-slate-600 text-xs">BoardVault v. 1.3</p>
+          <p className="text-center text-slate-600 text-xs">BoardVault v. 1.4</p>
         </div>
       </div>
     </div>
@@ -384,7 +391,7 @@ const AddGameModal = ({ onClose, onAdd }) => {
   const [query, setQuery] = useState("");
   const [form, setForm] = useState({
     title: "", publisher: "", year: new Date().getFullYear(), players: "", duration: "",
-    category: "Strategie", image: "", price: "", amazonPrice: "", notes: "", quantity: 1, rating: 0,
+    category: "Strategie", image: "", price: "", amazonPrice: "", notes: "", quantity: 1, rating: 0, wishlist: false,
   });
   const [rating, setRating] = useState(0);
 
@@ -402,6 +409,7 @@ const AddGameModal = ({ onClose, onAdd }) => {
       price: parseFloat(form.price) || 0,
       amazonPrice: parseFloat(form.amazonPrice) || 0,
       rating,
+      wishlist: form.wishlist,
       addedAt: new Date().toISOString(),
     });
     onClose();
@@ -508,6 +516,16 @@ const AddGameModal = ({ onClose, onAdd }) => {
             <StarRating rating={rating} onRate={setRating} size="lg" />
           </div>
 
+          <div className="flex items-center gap-2 bg-slate-700/50 rounded-xl px-4 py-2.5 border border-slate-600">
+            <span className="text-slate-400 text-xs flex-1">🛒 Auf Wunschliste setzen</span>
+            <button
+              onClick={() => setForm(f => ({ ...f, wishlist: !f.wishlist }))}
+              className={`relative w-10 h-5 rounded-full transition-colors ${form.wishlist ? "bg-amber-500" : "bg-slate-600"}`}
+            >
+              <span className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${form.wishlist ? "translate-x-5" : "translate-x-0.5"}`} />
+            </button>
+          </div>
+
           <div>
             <p className="text-slate-400 text-xs mb-1">Anzahl</p>
             <div className="flex items-center gap-3">
@@ -553,6 +571,7 @@ export default function BoardVault() {
   const [view, setView] = useState("list");
   const [search, setSearch] = useState("");
   const [filterCategory, setFilterCategory] = useState("Alle");
+  const [filterWishlist, setFilterWishlist] = useState("Alle");
   const [sortBy, setSortBy] = useState("addedAt");
   const [selectedGame, setSelectedGame] = useState(null);
   const [showAdd, setShowAdd] = useState(false);
@@ -566,6 +585,10 @@ export default function BoardVault() {
   const showToast = (msg) => {
     setToast(msg);
     setTimeout(() => setToast(null), 2500);
+  };
+
+  const toggleWishlist = (id) => {
+    setGames((prev) => prev.map((g) => g.id === id ? { ...g, wishlist: !g.wishlist } : g));
   };
 
   const addGame = (game) => {
@@ -624,6 +647,7 @@ export default function BoardVault() {
       const q = search.toLowerCase();
       return (
         (filterCategory === "Alle" || g.category === filterCategory) &&
+        (filterWishlist === "Alle" || (filterWishlist === "Wunschliste" ? g.wishlist : !g.wishlist)) &&
         (g.title.toLowerCase().includes(q) || g.publisher?.toLowerCase().includes(q))
       );
     })
@@ -674,7 +698,7 @@ export default function BoardVault() {
                 <h1 className="text-lg font-black tracking-tight bg-gradient-to-r from-violet-400 to-indigo-300 bg-clip-text text-transparent leading-none">
                   BoardVault
                 </h1>
-                <p className="text-slate-500 text-xs">v. 1.3 · {games.length} Spiele · {totalValue.toFixed(0)} € Wert</p>
+                <p className="text-slate-500 text-xs">v. 1.4 · {games.length} Spiele · {totalValue.toFixed(0)} € Wert</p>
               </div>
             </div>
 
@@ -714,6 +738,13 @@ export default function BoardVault() {
               {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
             </select>
             <select
+              value={filterWishlist}
+              onChange={(e) => setFilterWishlist(e.target.value)}
+              className="bg-slate-800 text-white rounded-xl px-3 py-2 text-sm outline-none border border-slate-700 focus:border-violet-500 transition-colors"
+            >
+              {WISHLIST_FILTER.map((w) => <option key={w} value={w}>{w}</option>)}
+            </select>
+            <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
               className="bg-slate-800 text-white rounded-xl px-3 py-2 text-sm outline-none border border-slate-700 focus:border-violet-500 transition-colors"
@@ -726,7 +757,7 @@ export default function BoardVault() {
 
       {/* Stats Bar */}
       <div className="max-w-6xl mx-auto px-4 py-4">
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
           {[
             { label: "Spiele", value: games.length, icon: "🎲" },
             { label: "Gesamtwert", value: `${totalValue.toFixed(0)} €`, icon: "💰" },
@@ -780,7 +811,10 @@ export default function BoardVault() {
                   onError={(e) => { e.target.onerror = null; e.target.src = `https://placehold.co/56x56/1e1b4b/a78bfa/png?text=${encodeURIComponent(game.title.charAt(0))}`; }}
                 />
                 <div className="flex-1 min-w-0">
-                  <h3 className="text-white font-semibold text-sm truncate">{game.title}</h3>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-white font-semibold text-sm truncate">{game.title}</h3>
+                    {game.wishlist && <span className="text-xs bg-amber-500/20 text-amber-400 border border-amber-500/30 px-1.5 py-0.5 rounded-full flex-shrink-0">🛒 Wunsch</span>}
+                  </div>
                   <p className="text-slate-400 text-xs">{game.publisher} · {game.year} · {game.category}</p>
                 </div>
                 <div className="hidden sm:flex items-center gap-4 text-xs text-slate-400">
@@ -791,6 +825,13 @@ export default function BoardVault() {
                 {game.amazonPrice > 0 && (
                   <span className="text-emerald-400 text-xs font-medium whitespace-nowrap">{game.amazonPrice.toFixed(2)} €</span>
                 )}
+                <button
+                  onClick={(e) => { e.stopPropagation(); toggleWishlist(game.id); }}
+                  className={`text-lg transition-transform hover:scale-125 flex-shrink-0 ${game.wishlist ? "text-amber-400" : "text-slate-600 hover:text-amber-400"}`}
+                  title={game.wishlist ? "Von Wunschliste entfernen" : "Zur Wunschliste hinzufügen"}
+                >
+                  {game.wishlist ? "🛒" : "🛒"}
+                </button>
               </div>
             ))}
           </div>
