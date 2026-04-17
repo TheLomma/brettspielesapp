@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 
 const SAMPLE_GAMES = [
-  { id: 1, title: "Catan", wishlist: false, tags: ["Klassiker", "Tausch"],
+  { id: 1, title: "Catan", wishlist: false, tags: ["Klassiker", "Tausch"], complexity: 2,
     publisher: "Kosmos",
     year: 1995,
     players: "3\u20134",
@@ -15,7 +15,7 @@ const SAMPLE_GAMES = [
     quantity: 1,
     addedAt: new Date().toISOString(),
   },
-  { id: 2, title: "Ticket to Ride", wishlist: false, tags: ["Familie", "Einsteiger"],
+  { id: 2, title: "Ticket to Ride", wishlist: false, tags: ["Familie", "Einsteiger"], complexity: 1,
     publisher: "Days of Wonder",
     year: 2004,
     players: "2\u20135",
@@ -29,7 +29,7 @@ const SAMPLE_GAMES = [
     quantity: 1,
     addedAt: new Date().toISOString(),
   },
-  { id: 3, title: "Pandemic", wishlist: false, tags: ["Kooperativ", "Anspruchsvoll"],
+  { id: 3, title: "Pandemic", wishlist: false, tags: ["Kooperativ", "Anspruchsvoll"], complexity: 3,
     publisher: "Z-Man Games",
     year: 2008,
     players: "2\u20134",
@@ -69,15 +69,13 @@ const SORT_OPTIONS = [
 
 const StarRating = ({ rating, onRate, size = "md" }) => {
   const [hovered, setHovered] = useState(0);
-  const s = size === "lg" ? "text-2xl" : "text-lg";
+  const s = size === "lg" ? "text-2xl" : "text-base";
   return (
     <div className="flex gap-0.5">
       {[1, 2, 3, 4, 5].map((star) => (
         <button
           key={star}
-          className={`${s} transition-transform hover:scale-125 ${
-            (hovered || rating) >= star ? "text-yellow-400" : "text-gray-600"
-          }`}
+          className={`${s} transition-transform hover:scale-125 ${(hovered || rating) >= star ? "text-yellow-400" : "text-gray-600"}`}
           onMouseEnter={() => onRate && setHovered(star)}
           onMouseLeave={() => onRate && setHovered(0)}
           onClick={() => onRate && onRate(star)}
@@ -85,6 +83,35 @@ const StarRating = ({ rating, onRate, size = "md" }) => {
           ★
         </button>
       ))}
+      {rating > 0 && <span className="text-slate-400 text-xs ml-1 self-center">{rating}/5</span>}
+    </div>
+  );
+};
+
+const ComplexityRating = ({ value, onChange }) => {
+  const [hovered, setHovered] = useState(0);
+  const labels = ["", "Sehr leicht", "Leicht", "Mittel", "Schwer", "Sehr schwer"];
+  const colors = ["", "text-emerald-400", "text-green-400", "text-yellow-400", "text-orange-400", "text-red-400"];
+  return (
+    <div className="space-y-1">
+      <div className="flex gap-1">
+        {[1,2,3,4,5].map((v) => (
+          <button
+            key={v}
+            onMouseEnter={() => onChange && setHovered(v)}
+            onMouseLeave={() => onChange && setHovered(0)}
+            onClick={() => onChange && onChange(v === value ? 0 : v)}
+            className={`flex-1 h-2 rounded-full transition-all ${
+              (hovered || value) >= v
+                ? v <= 1 ? "bg-emerald-400" : v <= 2 ? "bg-green-400" : v <= 3 ? "bg-yellow-400" : v <= 4 ? "bg-orange-400" : "bg-red-400"
+                : "bg-slate-600"
+            }`}
+          />
+        ))}
+      </div>
+      {(hovered || value) > 0 && (
+        <p className={`text-xs ${colors[hovered || value]}`}>{labels[hovered || value]}</p>
+      )}
     </div>
   );
 };
@@ -170,12 +197,13 @@ const Modal = ({ game, onClose, onUpdate, onDelete }) => {
   const [editLentTo, setEditLentTo] = useState(game.lentTo || "");
   const [editLentDate, setEditLentDate] = useState(game.lentDate || new Date().toISOString().split("T")[0]);
   const [editRating, setEditRating] = useState(game.rating || 0);
+  const [editComplexity, setEditComplexity] = useState(game.complexity || 0);
   const [editQuantity, setEditQuantity] = useState(game.quantity || 1);
   const [editPrice, setEditPrice] = useState(game.price || "");
   const [saved, setSaved] = useState(false);
 
   const handleSave = () => {
-    onUpdate({ ...game, notes: editNotes, rating: editRating, quantity: editQuantity, price: parseFloat(editPrice) || 0, wishlist: editWishlist, lentTo: editLentTo, lentDate: editLentTo ? editLentDate : "", tags: editTags });
+    onUpdate({ ...game, notes: editNotes, rating: editRating, complexity: editComplexity, quantity: editQuantity, price: parseFloat(editPrice) || 0, wishlist: editWishlist, lentTo: editLentTo, lentDate: editLentTo ? editLentDate : "", tags: editTags });
     setSaved(true);
     setTimeout(() => setSaved(false), 1500);
   };
@@ -236,9 +264,15 @@ const Modal = ({ game, onClose, onUpdate, onDelete }) => {
             </div>
           </div>
 
-          <div>
-            <p className="text-slate-400 text-xs mb-2">Meine Bewertung</p>
-            <StarRating rating={editRating} onRate={setEditRating} size="lg" />
+          <div className="space-y-3">
+            <div>
+              <p className="text-slate-400 text-xs mb-2">⭐ Meine Bewertung</p>
+              <StarRating rating={editRating} onRate={setEditRating} size="lg" />
+            </div>
+            <div>
+              <p className="text-slate-400 text-xs mb-2">🧠 Komplexität</p>
+              <ComplexityRating value={editComplexity} onChange={setEditComplexity} />
+            </div>
           </div>
 
           <div>
@@ -469,7 +503,7 @@ const SettingsModal = ({ onClose, games, onImport, onExport, onReset }) => {
           </div>
 
           {/* Version */}
-          <p className="text-center text-slate-600 text-xs">BoardVault v. 1.8</p>
+          <p className="text-center text-slate-600 text-xs">BoardVault v. 1.9</p>
         </div>
       </div>
     </div>
@@ -483,6 +517,7 @@ const AddGameModal = ({ onClose, onAdd }) => {
     category: "Strategie", image: "", price: "", amazonPrice: "", notes: "", quantity: 1, rating: 0, wishlist: false, tags: [],
   });
   const [rating, setRating] = useState(0);
+  const [complexity, setComplexity] = useState(0);
   const [tagInput, setTagInput] = useState("");
 
   const fillFromQuery = () => {
@@ -499,6 +534,7 @@ const AddGameModal = ({ onClose, onAdd }) => {
       price: parseFloat(form.price) || 0,
       amazonPrice: parseFloat(form.amazonPrice) || 0,
       rating,
+      complexity,
       wishlist: form.wishlist,
       addedAt: new Date().toISOString(),
     });
@@ -601,9 +637,15 @@ const AddGameModal = ({ onClose, onAdd }) => {
             />
           </div>
 
-          <div>
-            <p className="text-slate-400 text-xs mb-2">Bewertung</p>
-            <StarRating rating={rating} onRate={setRating} size="lg" />
+          <div className="space-y-3">
+            <div>
+              <p className="text-slate-400 text-xs mb-2">⭐ Bewertung</p>
+              <StarRating rating={rating} onRate={setRating} size="lg" />
+            </div>
+            <div>
+              <p className="text-slate-400 text-xs mb-2">🧠 Komplexität</p>
+              <ComplexityRating value={complexity} onChange={setComplexity} />
+            </div>
           </div>
 
           <div className="bg-slate-700/50 rounded-xl p-3 border border-slate-600 space-y-2">
@@ -885,7 +927,7 @@ export default function BoardVault() {
                 <h1 className="text-lg font-black tracking-tight bg-gradient-to-r from-violet-400 to-indigo-300 bg-clip-text text-transparent leading-none">
                   BoardVault
                 </h1>
-                <p className="text-slate-500 text-xs">v. 1.8 · {games.length} Spiele · {totalValue.toFixed(0)} € Wert</p>
+                <p className="text-slate-500 text-xs">v. 1.9 · {games.length} Spiele · {totalValue.toFixed(0)} € Wert</p>
               </div>
             </div>
 
@@ -1047,6 +1089,11 @@ export default function BoardVault() {
                   <span>👥 {game.players}</span>
                   <span>⏱ {game.duration}</span>
                   <StarRating rating={game.rating} />
+                  {game.complexity > 0 && (
+                    <span className={`text-xs font-medium ${
+                      game.complexity <= 1 ? "text-emerald-400" : game.complexity <= 2 ? "text-green-400" : game.complexity <= 3 ? "text-yellow-400" : game.complexity <= 4 ? "text-orange-400" : "text-red-400"
+                    }`}>🧠 {["" ,"Sehr leicht","Leicht","Mittel","Schwer","Sehr schwer"][game.complexity]}</span>
+                  )}
                 </div>
                 {game.amazonPrice > 0 && (
                   <span className="text-emerald-400 text-xs font-medium whitespace-nowrap">{game.amazonPrice.toFixed(2)} €</span>
