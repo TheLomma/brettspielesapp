@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 
 const SAMPLE_GAMES = [
   {
@@ -6,14 +6,14 @@ const SAMPLE_GAMES = [
     title: "Catan",
     publisher: "Kosmos",
     year: 1995,
-    players: "3–4",
-    duration: "60–120 min",
+    players: "3\u20134",
+    duration: "60\u2013120 min",
     category: "Strategie",
-    image: "https://images-na.ssl-images-amazon.com/images/I/81oJoIBPFbL.jpg",
+    image: "https://upload.wikimedia.org/wikipedia/en/a/a3/Catan-2015-boxart.jpg",
     price: 39.99,
     amazonPrice: 34.99,
     rating: 4,
-    notes: "Klassiker! Macht immer Spaß.",
+    notes: "Klassiker! Macht immer Spa\u00df.",
     quantity: 1,
     addedAt: new Date().toISOString(),
   },
@@ -22,14 +22,14 @@ const SAMPLE_GAMES = [
     title: "Ticket to Ride",
     publisher: "Days of Wonder",
     year: 2004,
-    players: "2–5",
-    duration: "30–60 min",
+    players: "2\u20135",
+    duration: "30\u201360 min",
     category: "Familie",
-    image: "https://images-na.ssl-images-amazon.com/images/I/91YNJM4oyhL.jpg",
+    image: "https://upload.wikimedia.org/wikipedia/en/9/92/Ticket_to_Ride_Board_Game_Box_EN.jpg",
     price: 44.99,
     amazonPrice: 41.99,
     rating: 5,
-    notes: "Perfekt für den Familienabend.",
+    notes: "Perfekt f\u00fcr den Familienabend.",
     quantity: 1,
     addedAt: new Date().toISOString(),
   },
@@ -38,10 +38,10 @@ const SAMPLE_GAMES = [
     title: "Pandemic",
     publisher: "Z-Man Games",
     year: 2008,
-    players: "2–4",
-    duration: "45–60 min",
+    players: "2\u20134",
+    duration: "45\u201360 min",
     category: "Kooperativ",
-    image: "https://images-na.ssl-images-amazon.com/images/I/81gOtTfHMGL.jpg",
+    image: "https://upload.wikimedia.org/wikipedia/en/0/0e/Pandemic_board_game_box.jpg",
     price: 34.99,
     amazonPrice: 29.99,
     rating: 4,
@@ -280,6 +280,106 @@ const Modal = ({ game, onClose, onUpdate, onDelete }) => {
   );
 };
 
+const SettingsModal = ({ onClose, games, onImport, onExport, onReset }) => {
+  const [confirmReset, setConfirmReset] = useState(false);
+
+  const handleReset = () => {
+    if (confirmReset) {
+      onReset();
+      onClose();
+    } else {
+      setConfirmReset(true);
+      setTimeout(() => setConfirmReset(false), 3000);
+    }
+  };
+
+  const totalValue = games.reduce((s, g) => s + (g.price || 0) * (g.quantity || 1), 0);
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+      <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-3xl w-full max-w-md border border-slate-700 shadow-2xl">
+        <div className="p-5 border-b border-slate-700 flex items-center justify-between">
+          <h2 className="text-white text-xl font-bold">⚙️ Einstellungen</h2>
+          <button onClick={onClose} className="text-slate-400 hover:text-white transition-colors text-xl">✕</button>
+        </div>
+
+        <div className="p-5 space-y-4">
+
+          {/* Stats */}
+          <div className="bg-slate-700/40 rounded-2xl p-4 border border-slate-600/50">
+            <p className="text-slate-400 text-xs font-semibold uppercase tracking-wider mb-3">Deine Sammlung</p>
+            <div className="grid grid-cols-3 gap-3 text-center">
+              <div>
+                <p className="text-white font-bold text-xl">{games.length}</p>
+                <p className="text-slate-400 text-xs">Spiele</p>
+              </div>
+              <div>
+                <p className="text-white font-bold text-xl">{totalValue.toFixed(0)} €</p>
+                <p className="text-slate-400 text-xs">Wert</p>
+              </div>
+              <div>
+                <p className="text-white font-bold text-xl">{new Set(games.map(g => g.category)).size}</p>
+                <p className="text-slate-400 text-xs">Kategorien</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Export / Import */}
+          <div className="bg-slate-700/40 rounded-2xl p-4 border border-slate-600/50 space-y-3">
+            <p className="text-slate-400 text-xs font-semibold uppercase tracking-wider">Daten sichern & übertragen</p>
+            <button
+              onClick={() => { onExport(); onClose(); }}
+              className="w-full flex items-center gap-3 bg-violet-600/20 hover:bg-violet-600/40 border border-violet-600/40 text-violet-300 hover:text-white rounded-xl px-4 py-3 transition-all text-sm font-medium"
+            >
+              <span className="text-xl">⬆️</span>
+              <div className="text-left">
+                <p className="font-semibold">Exportieren</p>
+                <p className="text-xs text-slate-400">Alle Spiele als JSON-Datei speichern</p>
+              </div>
+            </button>
+            <label className="w-full flex items-center gap-3 bg-indigo-600/20 hover:bg-indigo-600/40 border border-indigo-600/40 text-indigo-300 hover:text-white rounded-xl px-4 py-3 transition-all text-sm font-medium cursor-pointer">
+              <span className="text-xl">⬇️</span>
+              <div className="text-left">
+                <p className="font-semibold">Importieren</p>
+                <p className="text-xs text-slate-400">JSON-Backup laden & wiederherstellen</p>
+              </div>
+              <input type="file" accept=".json" onChange={(e) => { onImport(e); onClose(); }} className="hidden" />
+            </label>
+          </div>
+
+          {/* Cache Reset */}
+          <div className="bg-slate-700/40 rounded-2xl p-4 border border-slate-600/50 space-y-3">
+            <p className="text-slate-400 text-xs font-semibold uppercase tracking-wider">Zurücksetzen</p>
+            <div className="flex items-start gap-3 bg-slate-700/30 rounded-xl p-3">
+              <span className="text-lg mt-0.5">💡</span>
+              <p className="text-slate-400 text-xs leading-relaxed">
+                Falls Bilder nicht korrekt angezeigt werden, setze den Cache zurück. Dabei werden alle Spiele auf die <strong className="text-slate-300">Beispieldaten</strong> zurückgesetzt. Erstelle vorher ein Backup via Export!
+              </p>
+            </div>
+            <button
+              onClick={handleReset}
+              className={`w-full flex items-center gap-3 border rounded-xl px-4 py-3 transition-all text-sm font-medium ${
+                confirmReset
+                  ? "bg-red-600 border-red-500 text-white animate-pulse"
+                  : "bg-red-900/20 hover:bg-red-900/40 border-red-800/50 text-red-400 hover:text-white"
+              }`}
+            >
+              <span className="text-xl">🗑️</span>
+              <div className="text-left">
+                <p className="font-semibold">{confirmReset ? "Nochmal tippen zum Bestätigen!" : "Cache & Daten zurücksetzen"}</p>
+                <p className="text-xs opacity-70">{confirmReset ? "⚠️ Alle Daten werden gelöscht!" : "Stellt Beispieldaten wieder her"}</p>
+              </div>
+            </button>
+          </div>
+
+          {/* Version */}
+          <p className="text-center text-slate-600 text-xs">BoardVault v. 1.2</p>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const AddGameModal = ({ onClose, onAdd }) => {
   const [query, setQuery] = useState("");
   const [form, setForm] = useState({
@@ -456,6 +556,7 @@ export default function BoardVault() {
   const [sortBy, setSortBy] = useState("addedAt");
   const [selectedGame, setSelectedGame] = useState(null);
   const [showAdd, setShowAdd] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
   const [toast, setToast] = useState(null);
 
   useEffect(() => {
@@ -475,6 +576,12 @@ export default function BoardVault() {
   const updateGame = (updated) => {
     setGames((prev) => prev.map((g) => (g.id === updated.id ? updated : g)));
     if (selectedGame?.id === updated.id) setSelectedGame(updated);
+  };
+
+  const resetCache = () => {
+    localStorage.removeItem("boardvault_games");
+    setGames(SAMPLE_GAMES);
+    showToast("✅ Cache zurückgesetzt – Beispieldaten geladen!");
   };
 
   const deleteGame = (id) => {
@@ -542,7 +649,7 @@ export default function BoardVault() {
                 <h1 className="text-lg font-black tracking-tight bg-gradient-to-r from-violet-400 to-indigo-300 bg-clip-text text-transparent leading-none">
                   BoardVault
                 </h1>
-                <p className="text-slate-500 text-xs">v. 1.0 · {games.length} Spiele · {totalValue.toFixed(0)} € Wert</p>
+                <p className="text-slate-500 text-xs">v. 1.2 · {games.length} Spiele · {totalValue.toFixed(0)} € Wert</p>
               </div>
             </div>
 
@@ -567,16 +674,11 @@ export default function BoardVault() {
               </div>
 
               <button
-                onClick={exportJSON}
-                className="hidden sm:block bg-slate-700 hover:bg-slate-600 text-slate-300 hover:text-white text-xs px-3 py-2 rounded-xl transition-colors"
+                onClick={() => setShowSettings(true)}
+                className="bg-slate-700 hover:bg-slate-600 text-slate-300 hover:text-white text-xs px-3 py-2 rounded-xl transition-colors"
               >
-                ↑ Export
+                ⚙️ Einstellungen
               </button>
-
-              <label className="hidden sm:block cursor-pointer bg-slate-700 hover:bg-slate-600 text-slate-300 hover:text-white text-xs px-3 py-2 rounded-xl transition-colors">
-                ↓ Import
-                <input type="file" accept=".json" onChange={importJSON} className="hidden" />
-              </label>
 
               <button
                 onClick={() => setShowAdd(true)}
@@ -699,6 +801,15 @@ export default function BoardVault() {
           onClose={() => setSelectedGame(null)}
           onUpdate={updateGame}
           onDelete={deleteGame}
+        />
+      )}
+      {showSettings && (
+        <SettingsModal
+          onClose={() => setShowSettings(false)}
+          games={games}
+          onExport={exportJSON}
+          onImport={importJSON}
+          onReset={resetCache}
         />
       )}
       {showAdd && <AddGameModal onClose={() => setShowAdd(false)} onAdd={addGame} />}
