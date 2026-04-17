@@ -46,6 +46,9 @@ const SAMPLE_GAMES = [
 ];
 
 const WISHLIST_FILTER = ["Alle", "Sammlung", "Wunschliste"];
+const LENT_FILTER = ["Alle", "Verfügbar", "Verliehen"];
+const PLAYER_FILTER = ["Alle", "1", "2", "3", "4", "5+"];
+const DURATION_FILTER = ["Alle", "< 30 min", "30–60 min", "60–120 min", "> 120 min"];
 const CATEGORIES = ["Alle", "Strategie", "Familie", "Kooperativ", "Party", "Kartenspiel", "Würfelspiel", "Sonstiges"];
 const SORT_OPTIONS = [
   { value: "title", label: "Name A–Z" },
@@ -152,13 +155,15 @@ const GameCard = ({ game, onSelect, view }) => {
 const Modal = ({ game, onClose, onUpdate, onDelete }) => {
   const [editNotes, setEditNotes] = useState(game.notes || "");
   const [editWishlist, setEditWishlist] = useState(game.wishlist || false);
+  const [editLentTo, setEditLentTo] = useState(game.lentTo || "");
+  const [editLentDate, setEditLentDate] = useState(game.lentDate || new Date().toISOString().split("T")[0]);
   const [editRating, setEditRating] = useState(game.rating || 0);
   const [editQuantity, setEditQuantity] = useState(game.quantity || 1);
   const [editPrice, setEditPrice] = useState(game.price || "");
   const [saved, setSaved] = useState(false);
 
   const handleSave = () => {
-    onUpdate({ ...game, notes: editNotes, rating: editRating, quantity: editQuantity, price: parseFloat(editPrice) || 0, wishlist: editWishlist });
+    onUpdate({ ...game, notes: editNotes, rating: editRating, quantity: editQuantity, price: parseFloat(editPrice) || 0, wishlist: editWishlist, lentTo: editLentTo, lentDate: editLentTo ? editLentDate : "" });
     setSaved(true);
     setTimeout(() => setSaved(false), 1500);
   };
@@ -252,6 +257,36 @@ const Modal = ({ game, onClose, onUpdate, onDelete }) => {
               rows={3}
               className="w-full bg-slate-700/50 text-white rounded-xl p-3 text-sm outline-none border border-slate-600 focus:border-violet-500 transition-colors resize-none"
             />
+          </div>
+
+          <div className="bg-slate-700/40 rounded-xl p-3 border border-slate-600/50 space-y-2">
+            <p className="text-slate-400 text-xs font-semibold">📤 Verliehen an</p>
+            <input
+              type="text"
+              value={editLentTo}
+              onChange={(e) => setEditLentTo(e.target.value)}
+              placeholder="Name der Person..."
+              className="w-full bg-slate-700 text-white rounded-xl px-3 py-2 text-sm outline-none border border-slate-600 focus:border-blue-500 transition-colors"
+            />
+            {editLentTo && (
+              <div>
+                <p className="text-slate-400 text-xs mb-1">Verliehen seit</p>
+                <input
+                  type="date"
+                  value={editLentDate}
+                  onChange={(e) => setEditLentDate(e.target.value)}
+                  className="w-full bg-slate-700 text-white rounded-xl px-3 py-2 text-sm outline-none border border-slate-600 focus:border-blue-500 transition-colors"
+                />
+              </div>
+            )}
+            {editLentTo && (
+              <button
+                onClick={() => { setEditLentTo(""); setEditLentDate(""); }}
+                className="w-full text-xs text-blue-400 hover:text-white bg-blue-900/20 hover:bg-blue-700/40 border border-blue-800/40 rounded-lg py-1.5 transition-all"
+              >
+                ✅ Zurückgekommen
+              </button>
+            )}
           </div>
 
           <div className="flex items-center gap-2 bg-slate-700/40 rounded-xl px-4 py-2.5 border border-slate-600/50">
@@ -380,7 +415,7 @@ const SettingsModal = ({ onClose, games, onImport, onExport, onReset }) => {
           </div>
 
           {/* Version */}
-          <p className="text-center text-slate-600 text-xs">BoardVault v. 1.4</p>
+          <p className="text-center text-slate-600 text-xs">BoardVault v. 1.6</p>
         </div>
       </div>
     </div>
@@ -572,6 +607,9 @@ export default function BoardVault() {
   const [search, setSearch] = useState("");
   const [filterCategory, setFilterCategory] = useState("Alle");
   const [filterWishlist, setFilterWishlist] = useState("Alle");
+  const [filterLent, setFilterLent] = useState("Alle");
+  const [filterPlayers, setFilterPlayers] = useState("Alle");
+  const [filterDuration, setFilterDuration] = useState("Alle");
   const [sortBy, setSortBy] = useState("addedAt");
   const [selectedGame, setSelectedGame] = useState(null);
   const [showAdd, setShowAdd] = useState(false);
@@ -585,6 +623,11 @@ export default function BoardVault() {
   const showToast = (msg) => {
     setToast(msg);
     setTimeout(() => setToast(null), 2500);
+  };
+
+  const updateLent = (id, lentTo, lentDate) => {
+    setGames((prev) => prev.map((g) => g.id === id ? { ...g, lentTo: lentTo || "", lentDate: lentTo ? lentDate : "" } : g));
+    showToast(lentTo ? `📤 An ${lentTo} verliehen!` : "✅ Spiel wieder zurück!");
   };
 
   const toggleWishlist = (id) => {
@@ -648,6 +691,27 @@ export default function BoardVault() {
       return (
         (filterCategory === "Alle" || g.category === filterCategory) &&
         (filterWishlist === "Alle" || (filterWishlist === "Wunschliste" ? g.wishlist : !g.wishlist)) &&
+        (filterLent === "Alle" || (filterLent === "Verliehen" ? !!g.lentTo : !g.lentTo)) &&
+        (filterPlayers === "Alle" || (() => {
+          const p = g.players || "";
+          const nums = p.match(/\d+/g)?.map(Number) || [];
+          const min = nums[0] || 0;
+          const max = nums[1] || min;
+          const n = parseInt(filterPlayers);
+          if (filterPlayers === "5+") return max >= 5;
+          return min <= n && max >= n;
+        })()) &&
+        (filterDuration === "Alle" || (() => {
+          const d = g.duration || "";
+          const nums = d.match(/\d+/g)?.map(Number) || [];
+          const min = nums[0] || 0;
+          const max = nums[1] || min;
+          if (filterDuration === "< 30 min") return max < 30;
+          if (filterDuration === "30\u201360 min") return min <= 60 && max >= 30;
+          if (filterDuration === "60\u2013120 min") return min <= 120 && max >= 60;
+          if (filterDuration === "> 120 min") return min > 120;
+          return true;
+        })()) &&
         (g.title.toLowerCase().includes(q) || g.publisher?.toLowerCase().includes(q))
       );
     })
@@ -698,7 +762,7 @@ export default function BoardVault() {
                 <h1 className="text-lg font-black tracking-tight bg-gradient-to-r from-violet-400 to-indigo-300 bg-clip-text text-transparent leading-none">
                   BoardVault
                 </h1>
-                <p className="text-slate-500 text-xs">v. 1.4 · {games.length} Spiele · {totalValue.toFixed(0)} € Wert</p>
+                <p className="text-slate-500 text-xs">v. 1.6 · {games.length} Spiele · {totalValue.toFixed(0)} € Wert</p>
               </div>
             </div>
 
@@ -745,6 +809,27 @@ export default function BoardVault() {
               {WISHLIST_FILTER.map((w) => <option key={w} value={w}>{w}</option>)}
             </select>
             <select
+              value={filterLent}
+              onChange={(e) => setFilterLent(e.target.value)}
+              className="bg-slate-800 text-white rounded-xl px-3 py-2 text-sm outline-none border border-slate-700 focus:border-violet-500 transition-colors"
+            >
+              {LENT_FILTER.map((l) => <option key={l} value={l}>{l}</option>)}
+            </select>
+            <select
+              value={filterPlayers}
+              onChange={(e) => setFilterPlayers(e.target.value)}
+              className="bg-slate-800 text-white rounded-xl px-3 py-2 text-sm outline-none border border-slate-700 focus:border-violet-500 transition-colors"
+            >
+              {PLAYER_FILTER.map((p) => <option key={p} value={p}>{p === "Alle" ? "👥 Spieler" : `👥 ${p}`}</option>)}
+            </select>
+            <select
+              value={filterDuration}
+              onChange={(e) => setFilterDuration(e.target.value)}
+              className="bg-slate-800 text-white rounded-xl px-3 py-2 text-sm outline-none border border-slate-700 focus:border-violet-500 transition-colors"
+            >
+              {DURATION_FILTER.map((d) => <option key={d} value={d}>{d === "Alle" ? "⏱ Dauer" : `⏱ ${d}`}</option>)}
+            </select>
+            <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
               className="bg-slate-800 text-white rounded-xl px-3 py-2 text-sm outline-none border border-slate-700 focus:border-violet-500 transition-colors"
@@ -757,7 +842,7 @@ export default function BoardVault() {
 
       {/* Stats Bar */}
       <div className="max-w-6xl mx-auto px-4 py-4">
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
           {[
             { label: "Spiele", value: games.length, icon: "🎲" },
             { label: "Gesamtwert", value: `${totalValue.toFixed(0)} €`, icon: "💰" },
@@ -814,6 +899,7 @@ export default function BoardVault() {
                   <div className="flex items-center gap-2">
                     <h3 className="text-white font-semibold text-sm truncate">{game.title}</h3>
                     {game.wishlist && <span className="text-xs bg-amber-500/20 text-amber-400 border border-amber-500/30 px-1.5 py-0.5 rounded-full flex-shrink-0">🛒 Wunsch</span>}
+                    {game.lentTo && <span className="text-xs bg-blue-500/20 text-blue-400 border border-blue-500/30 px-1.5 py-0.5 rounded-full flex-shrink-0">📤 {game.lentTo}</span>}
                   </div>
                   <p className="text-slate-400 text-xs">{game.publisher} · {game.year} · {game.category}</p>
                 </div>
