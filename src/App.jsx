@@ -53,10 +53,18 @@ const SUGGESTED_TAGS = ["Klassiker", "Einsteiger", "Experte", "Schnell", "Komple
 
 const CATEGORIES = ["Alle", "Strategie", "Familie", "Kooperativ", "Party", "Kartenspiel", "Würfelspiel", "Sonstiges"];
 const SORT_OPTIONS = [
-  { value: "title", label: "Name A–Z" },
-  { value: "rating", label: "Bewertung" },
-  { value: "year", label: "Jahr" },
-  { value: "addedAt", label: "Zuletzt hinzugefügt" },
+  { value: "addedAt_desc", label: "Zuletzt hinzugefügt" },
+  { value: "title_asc", label: "Name A–Z" },
+  { value: "title_desc", label: "Name Z–A" },
+  { value: "rating_desc", label: "Beste Bewertung" },
+  { value: "rating_asc", label: "Schlechteste Bewertung" },
+  { value: "year_desc", label: "Neueste zuerst" },
+  { value: "year_asc", label: "Älteste zuerst" },
+  { value: "price_desc", label: "Teuerste zuerst" },
+  { value: "price_asc", label: "Günstigste zuerst" },
+  { value: "players_asc", label: "Wenigste Spieler" },
+  { value: "duration_asc", label: "Kürzeste Dauer" },
+  { value: "duration_desc", label: "Längste Dauer" },
 ];
 
 const StarRating = ({ rating, onRate, size = "md" }) => {
@@ -461,7 +469,7 @@ const SettingsModal = ({ onClose, games, onImport, onExport, onReset }) => {
           </div>
 
           {/* Version */}
-          <p className="text-center text-slate-600 text-xs">BoardVault v. 1.7</p>
+          <p className="text-center text-slate-600 text-xs">BoardVault v. 1.8</p>
         </div>
       </div>
     </div>
@@ -700,7 +708,7 @@ export default function BoardVault() {
   const [filterPlayers, setFilterPlayers] = useState("Alle");
   const [filterTag, setFilterTag] = useState("");
   const [filterDuration, setFilterDuration] = useState("Alle");
-  const [sortBy, setSortBy] = useState("addedAt");
+  const [sortBy, setSortBy] = useState("addedAt_desc");
   const [selectedGame, setSelectedGame] = useState(null);
   const [showAdd, setShowAdd] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
@@ -809,10 +817,32 @@ export default function BoardVault() {
       );
     })
     .sort((a, b) => {
-      if (sortBy === "title") return a.title.localeCompare(b.title);
-      if (sortBy === "rating") return (b.rating || 0) - (a.rating || 0);
-      if (sortBy === "year") return (b.year || 0) - (a.year || 0);
-      return new Date(b.addedAt) - new Date(a.addedAt);
+      switch (sortBy) {
+        case "title_asc": return a.title.localeCompare(b.title);
+        case "title_desc": return b.title.localeCompare(a.title);
+        case "rating_desc": return (b.rating || 0) - (a.rating || 0);
+        case "rating_asc": return (a.rating || 0) - (b.rating || 0);
+        case "year_desc": return (b.year || 0) - (a.year || 0);
+        case "year_asc": return (a.year || 0) - (b.year || 0);
+        case "price_desc": return (b.price || 0) - (a.price || 0);
+        case "price_asc": return (a.price || 0) - (b.price || 0);
+        case "players_asc": {
+          const pa = parseInt((a.players || "").match(/\d+/)?.[0]) || 0;
+          const pb = parseInt((b.players || "").match(/\d+/)?.[0]) || 0;
+          return pa - pb;
+        }
+        case "duration_asc": {
+          const da = parseInt((a.duration || "").match(/\d+/)?.[0]) || 0;
+          const db = parseInt((b.duration || "").match(/\d+/)?.[0]) || 0;
+          return da - db;
+        }
+        case "duration_desc": {
+          const da = parseInt((a.duration || "").match(/\d+/)?.[0]) || 0;
+          const db = parseInt((b.duration || "").match(/\d+/)?.[0]) || 0;
+          return db - da;
+        }
+        default: return new Date(b.addedAt) - new Date(a.addedAt);
+      }
     });
 
   const totalValue = games.reduce((s, g) => s + (g.price || 0) * (g.quantity || 1), 0);
@@ -855,7 +885,7 @@ export default function BoardVault() {
                 <h1 className="text-lg font-black tracking-tight bg-gradient-to-r from-violet-400 to-indigo-300 bg-clip-text text-transparent leading-none">
                   BoardVault
                 </h1>
-                <p className="text-slate-500 text-xs">v. 1.7 · {games.length} Spiele · {totalValue.toFixed(0)} € Wert</p>
+                <p className="text-slate-500 text-xs">v. 1.8 · {games.length} Spiele · {totalValue.toFixed(0)} € Wert</p>
               </div>
             </div>
 
