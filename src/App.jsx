@@ -503,7 +503,7 @@ const SettingsModal = ({ onClose, games, onImport, onExport, onReset }) => {
           </div>
 
           {/* Version */}
-          <p className="text-center text-slate-600 text-xs">BoardVault v. 2.2</p>
+          <p className="text-center text-slate-600 text-xs">BoardVault v. 2.3</p>
         </div>
       </div>
     </div>
@@ -1010,34 +1010,27 @@ export default function BoardVault() {
                 <h1 className="text-lg font-black tracking-tight bg-gradient-to-r from-violet-400 to-indigo-300 bg-clip-text text-transparent leading-none">
                   BoardVault
                 </h1>
-                <p className="text-slate-500 text-xs">v. 2.2 · {games.length} Spiele · {totalValue.toFixed(0)} € Wert</p>
+                <p className="text-slate-500 text-xs">v. 2.3 · {games.length} Spiele · {totalValue.toFixed(0)} € Wert</p>
               </div>
             </div>
 
             <div className="flex items-center gap-2">
-              {/* View Toggle */}
-              <div className="flex bg-slate-800 rounded-xl p-1 gap-1">
-                {[
-                  { id: "list", icon: "≡", label: "Liste" },
-                  { id: "grid-small", icon: "⊞", label: "Klein" },
-                  { id: "grid-large", icon: "▣", label: "Groß" },
-                ].map(({ id, icon, label }) => (
-                  <button
-                    key={id}
-                    onClick={() => setView(id)}
-                    title={label}
-                    className={`px-3 py-1.5 rounded-lg text-sm transition-all ${
-                      view === id ? "bg-violet-600 text-white" : "text-slate-400 hover:text-white"
-                    }`}
-                  >
-                    {icon}
-                  </button>
-                ))}
-              </div>
 
+                <div className="flex bg-slate-800 rounded-xl p-1 gap-1">
+                  {[
+                    { id: "list", icon: "≡", label: "Liste" },
+                    { id: "grid-small", icon: "⊞", label: "Klein" },
+                    { id: "grid-large", icon: "▣", label: "Groß" },
+                  ].map(({ id, icon, label }) => (
+                    <button key={id} onClick={() => setView(id)} title={label}
+                      className={`px-3 py-1.5 rounded-lg text-sm transition-all ${view === id ? "bg-violet-600 text-white" : "text-slate-400 hover:text-white"}`}>
+                      {icon}
+                    </button>
+                  ))}
+                </div>
 
-              <button
-                onClick={() => setShowSettings(true)}
+                <button
+                  onClick={() => setShowSettings(true)}
                 className="bg-slate-700 hover:bg-slate-600 text-slate-300 hover:text-white text-xs px-3 py-2 rounded-xl transition-colors"
               >
                 ⚙️ Einstellungen
@@ -1210,9 +1203,26 @@ export default function BoardVault() {
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-5">
             {filtered.map((game) => (
-              <GameCard key={game.id} game={game} onSelect={setSelectedGame} view="grid" />
+              <div onClick={() => setSelectedGame(game)} className="cursor-pointer group">
+                  <div className="relative overflow-hidden rounded-2xl border border-slate-700 group-hover:border-violet-500 transition-all shadow-lg group-hover:shadow-violet-900/50 group-hover:-translate-y-2" style={{aspectRatio:'2/3'}}>
+                    <img src={game.image} alt={game.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      onError={(e)=>{e.target.onerror=null;e.target.src=`https://placehold.co/300x450/1e1b4b/a78bfa/png?text=${encodeURIComponent(game.title)}`}} />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/10 to-transparent" />
+                    <div className="absolute top-2 right-2"><span className="bg-violet-600/90 text-white text-xs px-2 py-0.5 rounded-full">{game.category}</span></div>
+                    {game.wishlist && !game.lentTo && <div className="absolute top-2 left-2 text-xl">🛒</div>}
+                    {game.lentTo && <div className="absolute top-2 left-2"><span className="bg-blue-600/90 text-white text-xs px-2 py-0.5 rounded-full">📤 {game.lentTo}</span></div>}
+                    <div className="absolute bottom-0 left-0 right-0 p-3">
+                      <h3 className="text-white font-bold truncate">{game.title}</h3>
+                      <p className="text-slate-300 text-xs">{game.publisher} · {game.year}</p>
+                      <div className="flex items-center justify-between mt-1.5">
+                        <StarRating rating={game.rating} />
+                        {game.amazonPrice>0 && <span className="text-emerald-400 text-xs font-medium">{game.amazonPrice.toFixed(2)} €</span>}
+                      </div>
+                    </div>
+                  </div>
+                </div>
             ))}
           </div>
         )}
