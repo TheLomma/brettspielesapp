@@ -528,7 +528,7 @@ const SettingsModal = ({ onClose, games, onImport, onExport, onReset }) => {
           </div>
 
           {/* Version */}
-          <p className="text-center text-slate-600 text-xs">BoardVault v. 2.5</p>
+          <p className="text-center text-slate-600 text-xs">BoardVault v. 2.6</p>
         </div>
       </div>
     </div>
@@ -856,8 +856,9 @@ export default function BoardVault() {
   const [sortBy, setSortBy] = useState("addedAt_desc");
   const [selectedGame, setSelectedGame] = useState(null);
   const [showAdd, setShowAdd] = useState(false);
-  const [randomGame, setRandomGame] = useState(null);
   const [showSettings, setShowSettings] = useState(false);
+  const [showStats, setShowStats] = useState(false);
+  const [randomGame, setRandomGame] = useState(null);
   const [toast, setToast] = useState(null);
 
   useEffect(() => {
@@ -875,6 +876,11 @@ export default function BoardVault() {
     const pool = filtered.length > 0 ? filtered : games;
     const pick = pool[Math.floor(Math.random() * pool.length)];
     setRandomGame(pick);
+  };
+
+  const getLentDays = (lentDate) => {
+    if (!lentDate) return 0;
+    return Math.floor((new Date() - new Date(lentDate)) / (1000 * 60 * 60 * 24));
   };
 
   const toggleWishlist = (id) => {
@@ -1036,7 +1042,7 @@ export default function BoardVault() {
                 <h1 className="text-lg font-black tracking-tight bg-gradient-to-r from-violet-400 to-indigo-300 bg-clip-text text-transparent leading-none">
                   BoardVault
                 </h1>
-                <p className="text-slate-500 text-xs">v. 2.5 · {games.length} Spiele · {totalValue.toFixed(0)} € Wert</p>
+                <p className="text-slate-500 text-xs">v. 2.6 · {games.length} Spiele · {totalValue.toFixed(0)} € Wert</p>
               </div>
             </div>
 
@@ -1065,9 +1071,11 @@ export default function BoardVault() {
               <button
                 onClick={() => setShowAdd(true)}
                 className="bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white px-4 py-2 rounded-xl text-sm font-bold transition-all shadow-lg shadow-violet-900/40"
-              >
-                + Spiel
-              </button>
+                >
+                  + Spiel
+                </button>
+                <button onClick={() => setShowStats(true)} className="bg-slate-700 border border-slate-600 text-slate-300 hover:text-indigo-300 px-3 py-2 rounded-xl text-sm" title="Statistiken">📊</button>
+                <button onClick={() => pickRandomGame()} className="bg-slate-700 border border-slate-600 text-slate-300 hover:text-amber-300 px-3 py-2 rounded-xl text-sm" title="Zufälliges Spiel">🎲</button>
             </div>
           </div>
 
@@ -1273,6 +1281,59 @@ export default function BoardVault() {
         />
       )}
       {showAdd && <AddGameModal onClose={() => setShowAdd(false)} onAdd={addGame} />}
+
+        {showStats && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4" onClick={() => setShowStats(false)}>
+            <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-3xl w-full max-w-lg border border-slate-700 shadow-2xl" onClick={e => e.stopPropagation()}>
+              <div className="p-5 border-b border-slate-700 flex items-center justify-between">
+                <h2 className="text-white text-xl font-bold">📊 Statistiken</h2>
+                <button onClick={() => setShowStats(false)} className="text-slate-400 hover:text-white text-xl">✕</button>
+              </div>
+              <div className="p-5 space-y-4 max-h-[80vh] overflow-y-auto">
+                <div className="grid grid-cols-3 gap-3">
+                  {[
+                    { label: "Spiele", value: games.length, icon: "🎲", color: "text-violet-400" },
+                    { label: "Gesamtwert", value: games.reduce((s,g)=>s+(g.price||0)*(g.quantity||1),0).toFixed(0)+" €", icon: "💰", color: "text-emerald-400" },
+                    { label: "Ø Note", value: games.filter(g=>g.rating>0).length ? (games.filter(g=>g.rating>0).reduce((s,g)=>s+g.rating,0)/games.filter(g=>g.rating>0).length).toFixed(1)+" / 5" : "–", icon: "⭐", color: "text-yellow-400" },
+                    { label: "Wunschliste", value: games.filter(g=>g.wishlist).length, icon: "🛒", color: "text-amber-400" },
+                    { label: "Verliehen", value: games.filter(g=>g.lentTo).length, icon: "📤", color: "text-blue-400" },
+                    { label: "Kategorien", value: new Set(games.map(g=>g.category)).size, icon: "📂", color: "text-pink-400" },
+                  ].map(({label,value,icon,color}) => (
+                    <div key={label} className="bg-slate-700/40 rounded-2xl p-3 border border-slate-600/50 text-center">
+                      <p className="text-slate-400 text-xs">{icon} {label}</p>
+                      <p className={"font-bold text-lg "+color}>{value}</p>
+                    </div>
+                  ))}
+                </div>
+                <div className="bg-slate-700/40 rounded-2xl p-4 border border-slate-600/50">
+                  <p className="text-slate-400 text-xs font-semibold uppercase tracking-wider mb-3">📂 Spiele pro Kategorie</p>
+                  <div className="space-y-2">
+                    {Object.entries(games.reduce((acc,g)=>{acc[g.category]=(acc[g.category]||0)+1;return acc;},{})).sort((a,b)=>b[1]-a[1]).map(([cat,count])=>(
+                      <div key={cat} className="flex items-center gap-2">
+                        <span className="text-slate-300 text-xs w-24 flex-shrink-0">{cat}</span>
+                        <div className="flex-1 bg-slate-700 rounded-full h-2"><div className="bg-violet-500 h-2 rounded-full" style={{width:(count/games.length*100)+"%"}} /></div>
+                        <span className="text-slate-400 text-xs w-5 text-right">{count}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div className="bg-slate-700/40 rounded-2xl p-4 border border-slate-600/50">
+                  <p className="text-slate-400 text-xs font-semibold uppercase tracking-wider mb-3">🏆 Top Bewertungen</p>
+                  <div className="space-y-2">
+                    {[...games].filter(g=>g.rating>0).sort((a,b)=>b.rating-a.rating).slice(0,5).map((g,i)=>(
+                      <div key={g.id} className="flex items-center gap-3">
+                        <span className="text-slate-500 text-xs w-4">{i+1}.</span>
+                        <img src={g.image} alt={g.title} className="w-8 h-8 rounded-lg object-cover flex-shrink-0" onError={(e)=>{e.target.onerror=null;e.target.src="https://placehold.co/32x32/1e1b4b/a78bfa/png?text="+encodeURIComponent(g.title.charAt(0))}} />
+                        <span className="text-white text-sm flex-1 truncate">{g.title}</span>
+                        <span className="text-yellow-400 text-xs">{"★".repeat(g.rating)}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
       {/* Random Game Modal */}
         {randomGame && (
