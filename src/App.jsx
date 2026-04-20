@@ -209,8 +209,8 @@ const Modal = ({ game, onClose, onUpdate, onDelete }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
-      <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-3xl w-full max-w-lg border border-slate-700 shadow-2xl overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4" onClick={onClose}>
+      <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-3xl w-full max-w-lg border border-slate-700 shadow-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
         <div className="relative h-48">
           <img
             src={game.image}
@@ -231,9 +231,19 @@ const Modal = ({ game, onClose, onUpdate, onDelete }) => {
         </div>
 
         <div className="p-5 space-y-4 max-h-96 overflow-y-auto">
-          <div>
-            <h2 className="text-white text-2xl font-bold">{game.title}</h2>
-            <p className="text-slate-400">{game.publisher} · {game.year}</p>
+          <div className="flex items-start justify-between gap-2">
+            <div>
+              <h2 className="text-white text-2xl font-bold">{game.title}</h2>
+              <p className="text-slate-400">{game.publisher} · {game.year}</p>
+            </div>
+            <a
+              href={`https://boardgamegeek.com/search/boardgame?q=${encodeURIComponent(game.title)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex-shrink-0 bg-orange-700/20 hover:bg-orange-600/40 border border-orange-700/40 text-orange-400 hover:text-white px-2 py-1 rounded-lg text-xs font-medium transition-all"
+            >
+              🎯 BGG
+            </a>
           </div>
 
           <div className="grid grid-cols-2 gap-3 text-sm">
@@ -426,9 +436,15 @@ const SettingsModal = ({ onClose, games, onImport, onExport, onReset }) => {
   const wishlistCount = games.filter(g => g.wishlist).length;
   const lentCount = games.filter(g => g.lentTo).length;
 
+  const getLentDays = (lentDate) => {
+    if (!lentDate) return 0;
+    const diff = new Date() - new Date(lentDate);
+    return Math.floor(diff / (1000 * 60 * 60 * 24));
+  };
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
-      <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-3xl w-full max-w-md border border-slate-700 shadow-2xl">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4" onClick={onClose}>
+      <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-3xl w-full max-w-md border border-slate-700 shadow-2xl" onClick={e => e.stopPropagation()}>
         <div className="p-5 border-b border-slate-700 flex items-center justify-between">
           <h2 className="text-white text-xl font-bold">⚙️ Einstellungen</h2>
           <button onClick={onClose} className="text-slate-400 hover:text-white transition-colors text-xl">✕</button>
@@ -512,7 +528,7 @@ const SettingsModal = ({ onClose, games, onImport, onExport, onReset }) => {
           </div>
 
           {/* Version */}
-          <p className="text-center text-slate-600 text-xs">BoardVault v. 2.4</p>
+          <p className="text-center text-slate-600 text-xs">BoardVault v. 2.5</p>
         </div>
       </div>
     </div>
@@ -613,8 +629,8 @@ const AddGameModal = ({ onClose, onAdd }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
-      <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-3xl w-full max-w-lg border border-slate-700 shadow-2xl">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4" onClick={onClose}>
+      <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-3xl w-full max-w-lg border border-slate-700 shadow-2xl" onClick={e => e.stopPropagation()}>
         <div className="p-5 border-b border-slate-700 flex items-center justify-between">
           <h2 className="text-white text-xl font-bold">🎲 Spiel hinzufügen</h2>
           <button onClick={onClose} className="text-slate-400 hover:text-white transition-colors text-xl">✕</button>
@@ -840,6 +856,7 @@ export default function BoardVault() {
   const [sortBy, setSortBy] = useState("addedAt_desc");
   const [selectedGame, setSelectedGame] = useState(null);
   const [showAdd, setShowAdd] = useState(false);
+  const [randomGame, setRandomGame] = useState(null);
   const [showSettings, setShowSettings] = useState(false);
   const [toast, setToast] = useState(null);
 
@@ -853,6 +870,12 @@ export default function BoardVault() {
   };
 
   const allTags = [...new Set(games.flatMap(g => g.tags || []))];
+
+  const pickRandomGame = () => {
+    const pool = filtered.length > 0 ? filtered : games;
+    const pick = pool[Math.floor(Math.random() * pool.length)];
+    setRandomGame(pick);
+  };
 
   const toggleWishlist = (id) => {
     setGames((prev) => prev.map((g) => g.id === id ? { ...g, wishlist: !g.wishlist } : g));
@@ -937,7 +960,11 @@ export default function BoardVault() {
           if (filterDuration === "> 120 min") return min > 120;
           return true;
         })()) &&
-        (g.title.toLowerCase().includes(q) || g.publisher?.toLowerCase().includes(q))
+        (g.title.toLowerCase().includes(q) ||
+          g.publisher?.toLowerCase().includes(q) ||
+          g.category?.toLowerCase().includes(q) ||
+          (g.notes || "").toLowerCase().includes(q) ||
+          (g.tags || []).some(t => t.toLowerCase().includes(q)))
       );
     })
     .sort((a, b) => {
@@ -1009,7 +1036,7 @@ export default function BoardVault() {
                 <h1 className="text-lg font-black tracking-tight bg-gradient-to-r from-violet-400 to-indigo-300 bg-clip-text text-transparent leading-none">
                   BoardVault
                 </h1>
-                <p className="text-slate-500 text-xs">v. 2.4 · {games.length} Spiele · {totalValue.toFixed(0)} € Wert</p>
+                <p className="text-slate-500 text-xs">v. 2.5 · {games.length} Spiele · {totalValue.toFixed(0)} € Wert</p>
               </div>
             </div>
 
@@ -1247,7 +1274,37 @@ export default function BoardVault() {
       )}
       {showAdd && <AddGameModal onClose={() => setShowAdd(false)} onAdd={addGame} />}
 
-      {/* Toast */}
+      {/* Random Game Modal */}
+        {randomGame && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4" onClick={() => setRandomGame(null)}>
+            <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-3xl w-full max-w-sm border border-amber-500/40 shadow-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
+              <div className="relative h-48">
+                <img src={randomGame.image} alt={randomGame.title} className="w-full h-full object-cover"
+                  onError={(e) => { e.target.onerror=null; e.target.src=`https://placehold.co/400x200/1e1b4b/a78bfa/png?text=${encodeURIComponent(randomGame.title)}`; }} />
+                <div className="absolute inset-0 bg-gradient-to-t from-slate-900 to-transparent" />
+                <button onClick={() => setRandomGame(null)} className="absolute top-3 right-3 bg-black/50 hover:bg-black/80 text-white rounded-full w-8 h-8 flex items-center justify-center">✕</button>
+                <div className="absolute top-3 left-3 bg-amber-500 text-black text-xs font-bold px-2 py-1 rounded-full">🎲 Zufällig</div>
+              </div>
+              <div className="p-5 space-y-3">
+                <div>
+                  <h2 className="text-white text-2xl font-bold">{randomGame.title}</h2>
+                  <p className="text-slate-400">{randomGame.publisher} · {randomGame.year}</p>
+                </div>
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  <div className="bg-slate-700/50 rounded-xl p-2 text-center"><p className="text-slate-400 text-xs">Spieler</p><p className="text-white font-medium">👥 {randomGame.players}</p></div>
+                  <div className="bg-slate-700/50 rounded-xl p-2 text-center"><p className="text-slate-400 text-xs">Dauer</p><p className="text-white font-medium">⏱ {randomGame.duration}</p></div>
+                </div>
+                <StarRating rating={randomGame.rating} />
+                <div className="flex gap-2 pt-1">
+                  <button onClick={() => { setSelectedGame(randomGame); setRandomGame(null); }} className="flex-1 py-2.5 bg-violet-600 hover:bg-violet-500 text-white rounded-xl font-semibold text-sm transition-all">Details öffnen</button>
+                  <button onClick={pickRandomGame} className="px-4 py-2.5 bg-amber-500/20 hover:bg-amber-500/40 border border-amber-500/40 text-amber-300 rounded-xl font-semibold text-sm transition-all">🔀 Neu</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Toast */}
       {toast && (
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-slate-800 border border-slate-600 text-white px-6 py-3 rounded-2xl shadow-2xl text-sm font-medium animate-bounce">
           {toast}
