@@ -528,7 +528,7 @@ const SettingsModal = ({ onClose, games, onImport, onExport, onReset }) => {
           </div>
 
           {/* Version */}
-          <p className="text-center text-slate-600 text-xs">BoardVault v. 2.6</p>
+          <p className="text-center text-slate-600 text-xs">BoardVault v2.8</p>
         </div>
       </div>
     </div>
@@ -1039,10 +1039,8 @@ export default function BoardVault() {
                 </svg>
               </div>
               <div>
-                <h1 className="text-lg font-black tracking-tight bg-gradient-to-r from-violet-400 to-indigo-300 bg-clip-text text-transparent leading-none">
-                  BoardVault
-                </h1>
-                <p className="text-slate-500 text-xs">v. 2.6 · {games.length} Spiele · {totalValue.toFixed(0)} € Wert</p>
+                <h1 className="text-lg font-black tracking-tight text-violet-300 leading-none">BoardVault</h1>
+                <p className="text-slate-400 text-xs">{games.length} Spiele · v2.8</p>
               </div>
             </div>
 
