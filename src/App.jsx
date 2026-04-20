@@ -424,6 +424,7 @@ const SettingsModal = ({ onClose, games, onImport, onExport, onReset }) => {
 
   const totalValue = games.filter(g => !g.wishlist).reduce((s, g) => s + (g.price || 0) * (g.quantity || 1), 0);
   const wishlistCount = games.filter(g => g.wishlist).length;
+  const lentCount = games.filter(g => g.lentTo).length;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
@@ -450,6 +451,14 @@ const SettingsModal = ({ onClose, games, onImport, onExport, onReset }) => {
               <div>
                 <p className="text-white font-bold text-xl">{new Set(games.map(g => g.category)).size}</p>
                 <p className="text-slate-400 text-xs">Kategorien</p>
+              </div>
+              <div>
+                <p className="text-white font-bold text-xl">{wishlistCount}</p>
+                <p className="text-slate-400 text-xs">Wunschliste</p>
+              </div>
+              <div>
+                <p className="text-amber-400 font-bold text-xl">{lentCount}</p>
+                <p className="text-slate-400 text-xs">Verliehen</p>
               </div>
             </div>
           </div>
@@ -503,7 +512,7 @@ const SettingsModal = ({ onClose, games, onImport, onExport, onReset }) => {
           </div>
 
           {/* Version */}
-          <p className="text-center text-slate-600 text-xs">BoardVault v. 2.3</p>
+          <p className="text-center text-slate-600 text-xs">BoardVault v. 2.4</p>
         </div>
       </div>
     </div>
@@ -519,11 +528,6 @@ const AddGameModal = ({ onClose, onAdd }) => {
   const [rating, setRating] = useState(0);
   const [complexity, setComplexity] = useState(0);
   const [tagInput, setTagInput] = useState("");
-
-  const fillFromQuery = () => {
-    if (!query.trim()) return;
-    setForm((f) => ({ ...f, title: query }));
-  };
 
   const handleAdd = () => {
     if (!form.title.trim()) return;
@@ -850,11 +854,6 @@ export default function BoardVault() {
 
   const allTags = [...new Set(games.flatMap(g => g.tags || []))];
 
-  const updateLent = (id, lentTo, lentDate) => {
-    setGames((prev) => prev.map((g) => g.id === id ? { ...g, lentTo: lentTo || "", lentDate: lentTo ? lentDate : "" } : g));
-    showToast(lentTo ? `📤 An ${lentTo} verliehen!` : "✅ Spiel wieder zurück!");
-  };
-
   const toggleWishlist = (id) => {
     setGames((prev) => prev.map((g) => g.id === id ? { ...g, wishlist: !g.wishlist } : g));
   };
@@ -1010,7 +1009,7 @@ export default function BoardVault() {
                 <h1 className="text-lg font-black tracking-tight bg-gradient-to-r from-violet-400 to-indigo-300 bg-clip-text text-transparent leading-none">
                   BoardVault
                 </h1>
-                <p className="text-slate-500 text-xs">v. 2.3 · {games.length} Spiele · {totalValue.toFixed(0)} € Wert</p>
+                <p className="text-slate-500 text-xs">v. 2.4 · {games.length} Spiele · {totalValue.toFixed(0)} € Wert</p>
               </div>
             </div>
 
